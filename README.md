@@ -593,44 +593,205 @@ R: No, utilizan CSS keyframes optimizadas que consumen recursos mínimos y se ej
 R: Sí, puedes modificar las variables CSS en `modals.leonardo.css` o cambiar a `dashboard.html` para el tema clásico.
 
 **P: ¿El sistema funciona en móviles?**  
-R: Sí, el diseño es completamente responsive y funciona en tablets y móviles, aunque la experiencia óptima es en desktop.
+```markdown
+# 🥭 MANGO AI Video Studio — Advanced News Video Generation Platform
 
-### 🔮 **Roadmap 2025-2026**
+> A single platform that automates professional news video production using modern AI: RAG-based retrieval, high-quality voice synthesis, and AI-driven video generation with lip-sync. Clean Leonardo-style UI.
 
-- [ ] **Multi-idioma**: Soporte para inglés, francés, italiano nativo
-- [ ] **Más voces**: Múltiples narradores y estilos por idioma  
-- [ ] **Video templates**: Diferentes formatos (vertical, horizontal, cuadrado)
-- [ ] **AI Optimization**: Mejoras en velocidad y calidad de generación
-- [ ] **Mobile App**: Aplicación nativa para iOS y Android
-- [ ] **Live streaming**: Transmisión automática a redes sociales
-- [ ] **Analytics Dashboard**: Métricas avanzadas de engagement
-- [ ] **Cloud Deployment**: Versión SaaS en la nube
+Made with � by Cheeky Mango AI Studio | Version 2.1 | October 2025
 
 ---
 
-## 📞 **Soporte y Comunidad**
+## What's New (2025)
 
-### 🛠️ **Obtener Ayuda**
-- **Logs del Sistema**: Revisa `http://localhost:3000` → Logs para diagnóstico detallado
-- **Configuración**: Ejecuta los comandos de diagnóstico en la sección Troubleshooting
-- **Documentación**: Este README contiene soluciones para 95% de problemas comunes
+Key features implemented:
 
-### 🚀 **Contribuir al Proyecto**
-- **Report Bugs**: Abre issues en GitHub con logs detallados
-- **Feature Requests**: Propón nuevas funcionalidades
-- **Pull Requests**: Mejoras de código siguiendo las guías de estilo
-- **Documentation**: Ayuda a mantener la documentación actualizada
+- Drag & Drop image upload with validation
+- Intelligent carousel showing 8 news items (4 countries)
+- Leonardo.AI themed UI (glassmorphism + gradients)
+- Side-by-side AI transform preview
+- Responsive design (desktop, tablet, mobile)
+- Modal-driven approval workflow and real-time logs
 
-### 📊 **Estadísticas del Proyecto**
-- **🎬 Videos Generados**: +1,000 videos creados exitosamente
-- **📰 Noticias Procesadas**: +500 artículos de 4 países indexados
-- **⭐ Success Rate**: 97.3% de videos generados sin errores
-- **🚀 Tiempo Promedio**: 45 segundos del script al video final
+### Video generation highlights
+
+- Custom photo uploads for personalized videos
+- Dual-voice support (female / male)
+- Natural-language queries for content selection
+- Short social-ready videos (≈20 seconds)
+- HD output with lip-sync via Hedra AI
 
 ---
 
-**🎬 MANGO AI Video Studio** - La plataforma más avanzada para generación automática de contenido audiovisual con IA 🚀
+## Table of Contents
 
-*Documentación actualizada - Octubre 2025 - Versión 2.1.0*
+- Overview
+- Architecture
+- Features
+- Installation
+- Configuration
+- Usage
+- Project structure
+- Workflow
+- APIs & Services
+- Troubleshooting
+- FAQ
 
-> **Made with 💛 by Cheeky Mango AI Studio** - Innovando el futuro del contenido audiovisual
+---
+
+## Overview
+
+MANGO AI Video Studio is a complete system that automates audiovisual content production using modern AI components. The platform:
+
+1. Crawls and indexes news from multiple sources (RAG)
+2. Generates a short script using GPT-4 (context-aware)
+3. Produces natural audio (ElevenLabs)
+4. Renders a lip-synced video using Hedra AI
+5. Delivers final output via the web dashboard and optional Telegram bot
+
+Primary use case: produce short, professional news videos from a user-uploaded photo and a natural-language query.
+
+---
+
+## Project Structure (summary)
+
+```
+MANGO AI Video Studio/
+├── server.js
+├── dashboard-new.html
+├── frontend/
+│   ├── leonardo-style.css
+│   ├── modals.leonardo.css
+│   └── dashboard.modals.js
+├── modules/
+│   ├── audio-processor.js
+│   ├── image-processor.js
+│   ├── script-generator.js
+│   └── video-creator.js
+├── uploads/
+├── generated_audios/
+└── final_videos/
+```
+
+---
+
+## Features (high level)
+
+- Intelligent 8-item carousel (2 items per country)
+- Drag & Drop upload with instant preview
+- Side-by-side image transformation preview
+- Modal-based approval flow before video creation
+- Telegram Bot integration (optional)
+
+---
+
+## Installation
+
+Requirements:
+
+```bash
+Node.js 18+ (Node 20 recommended)
+Git
+```
+
+Quick start:
+
+```bash
+git clone https://github.com/JorgeGdev/mangoAIVideo-Generator.git
+cd mangoAIVideo-Generator
+npm install
+```
+
+Create a `.env` file with the required API keys (see Configuration below), then run:
+
+```bash
+npm start
+```
+
+Open the dashboard at: http://localhost:3000 (default login: admin / admin)
+
+---
+
+## Configuration (environment variables)
+
+Create a `.env` with the following keys (examples):
+
+```env
+# OpenAI
+OPENAI_API_KEY=your_openai_api_key
+
+# ElevenLabs
+ELEVENLABS_API_KEY=your_elevenlabs_key
+
+# Hedra AI
+HEDRA_API_KEY=your_hedra_api_key
+
+# Supabase (RAG storage)
+SUPABASE_URL=https://your-supabase-url
+SUPABASE_KEY=your-service-role-key
+
+# Telegram (optional)
+BOT_TOKEN=your_bot_token
+CHAT_ID=your_chat_id
+```
+
+Do not commit `.env` — a `.gitignore` is included to prevent accidental commits.
+
+---
+
+## Usage
+
+1. Start the server: `npm start`
+2. Open `http://localhost:3000`
+3. Upload a photo, choose a voice, enter a query, and generate the video
+
+Telegram flow (optional): use the bot to request videos via chat with approval steps.
+
+---
+
+## Workflow (video generation)
+
+1. User uploads image and submits a textual query
+2. System performs RAG search and builds context
+3. GPT-4 generates a concise script (≈65–70 words)
+4. ElevenLabs synthesizes audio
+5. Hedra creates the lip-synced video
+6. Final MP4 is saved under `final_videos/` and (optionally) delivered via Telegram
+
+---
+
+## APIs & Services
+
+- OpenAI (GPT-4) — script generation
+- ElevenLabs — high-quality speech synthesis
+- Hedra AI — video generation and lip-sync
+- Supabase — vector DB / storage
+- Telegram — optional delivery and control
+
+---
+
+## Troubleshooting & Diagnostics
+
+Quick checks:
+
+```bash
+node -e "console.log('Node:', process.version)"
+npm -v
+```
+
+Check logs in the dashboard at `http://localhost:3000`.
+
+---
+
+## Contributing
+
+- Open issues on GitHub with logs and reproduction steps
+- Send pull requests with a clear description and tests
+
+---
+
+## License & Credits
+
+Made with 💛 by Cheeky Mango AI Studio — October 2025
+
+``` 

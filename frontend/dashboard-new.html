@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Video Generator - Creativity, Unleashed.</title>
+
+    <!-- Leonardo.AI Style -->
+    <link rel="stylesheet" href="/frontend/leonardo-style.css" />
+  </head>
+  <body class="leonardo-theme">
+    <!-- TOP BANNER (shrinks on scroll) -->
+    <div class="top-banner" id="topBanner">
+      <p>
+        Made with <span class="animated-heart">💛</span> by Cheeky Mango AI
+        Studio
+      </p>
+    </div>
+
+    <!-- HEADER / NAVBAR -->
+    <header class="leonardo-header" id="mainHeader">
+      <div class="container-wide">
+        <div class="header-content">
+          <!-- Logo -->
+          <div class="logo">
+            <img
+              src="/images/logo.png"
+              alt="Logo"
+              width="32"
+              height="32"
+              style="border-radius: 6px"
+            />
+            <span class="logo-text">Build Your Influencer</span>
+          </div>
+
+          <!-- Nav Links (marketing-first) -->
+          <nav class="main-nav">
+            <a href="#features">Features</a>
+            <a href="#toolkit">Solutions</a>
+            <a href="#showcase">Learn</a>
+            <a href="#stats">For Teams</a>
+            <a href="#pricing">Pricing</a>
+          </nav>
+
+          <!-- Actions -->
+          <div class="header-actions">
+            <button
+              class="btn-admin"
+              onclick="window.location.href='/admin.html'"
+            >
+              Admin
+            </button>
+            <button class="btn-launch" onclick="scrollToGeneration()">
+              Launch App
+            </button>
+            <button class="btn-logout" onclick="logout()">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero-leonardo">
+      <div class="container-wide">
+        <div class="hero-grid">
+          <!-- Left: Copy -->
+          <div class="hero-copy">
+            <div class="hero-badge-new">
+              <span class="badge-dot"></span>
+              AI Powered Video Generation
+            </div>
+            <h1 class="hero-title-leo">
+              Creativity,<br />
+              <span class="gradient-text">Unleashed.</span>
+            </h1>
+            <p class="hero-subtitle-leo">
+              Leverage generative AI with a unique suite of tools to<br />
+              convey your ideas to the world.
+            </p>
+            <div class="hero-ctas">
+              <button class="btn-primary-leo" onclick="scrollToGeneration()">
+                Get Started
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+              <button
+                class="btn-secondary-leo"
+                onclick="window.open('#api', '_self')"
+              >
+                Developer API →
+              </button>
+            </div>
+          </div>
+
+          <!-- Right: Visual showcase -->
+          <div class="hero-visual">
+            <div class="hero-card hero-card-1">
+              <img
+                src="images/modified/influencer_1760829988513.jpg"
+                alt="AI Generated Host"
+                onerror="this.style.display='none'"
+              />
+            </div>
+            <div class="hero-card hero-card-2">
+              <img
+                src="images/modified/test-gemini-result-1760684586856.jpg"
+                alt="AI Transformed"
+                onerror="this.style.display='none'"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating gradient orbs -->
+      <div class="gradient-orb orb-1"></div>
+      <div class="gradient-orb orb-2"></div>
+    </section>
+
+    <!-- AS FEATURED IN / SOCIAL PROOF -->
+    <section class="social-proof">
+      <div class="container-wide">
+        <p class="social-proof-label">TRUSTED BY THOUSANDS</p>
+        <div class="social-stats">
+          <div class="social-stat">
+            <span class="stat-value-leo" id="vectorCount">0</span>
+            <span class="stat-label-leo">RAG Vectors</span>
+          </div>
+          <div class="social-stat">
+            <span class="stat-value-leo" id="videosCount">0</span>
+            <span class="stat-label-leo">Videos Generated</span>
+          </div>
+          <div class="social-stat">
+            <span class="stat-value-leo" id="successRate">0%</span>
+            <span class="stat-label-leo">Success Rate</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CAROUSEL (KEEP EXACT AS IS) -->
+    <section class="carousel-section" id="features">
+      <div class="container-wide">
+        <div class="section-header-leo">
+          <h2 class="section-title-leo">Latest News Feed</h2>
+          <p class="section-subtitle-leo">
+            Real-time updates from the most trusted sources
+          </p>
+        </div>
+
+        <!-- Tu carrusel existente SIN CAMBIOS -->
+        <div class="carousel-banner">
+          <div class="carousel-container">
+            <div class="carousel-slides" id="carouselSlides">
+              <div class="carousel-slide active">
+                <div
+                  class="carousel-image"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #667eea 0%,
+                      #764ba2 100%
+                    );
+                  "
+                >
+                  <div class="carousel-overlay"></div>
+                  <div class="carousel-content">
+                    <div class="carousel-loader">
+                      <div class="loader-spinner"></div>
+                      <p>Loading latest news...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button
+              class="carousel-nav carousel-prev"
+              id="carouselPrev"
+              aria-label="Previous"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <button
+              class="carousel-nav carousel-next"
+              id="carouselNext"
+              aria-label="Next"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+            <div class="carousel-dots" id="carouselDots"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOOLKIT / FEATURES -->
+    <section class="toolkit-section" id="toolkit">
+      <div class="container-wide">
+        <div class="section-header-leo centered">
+          <h2 class="section-title-leo">Powerful AI Toolkit</h2>
+          <p class="section-subtitle-leo">
+            Everything you need to create stunning news videos
+          </p>
+        </div>
+
+        <!-- Feature Grid -->
+        <div class="toolkit-grid">
+          <!-- Scraper -->
+          <div class="toolkit-card">
+            <div class="toolkit-icon">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+                />
+              </svg>
+            </div>
+            <h3 class="toolkit-title">News Scraper</h3>
+            <p class="toolkit-desc">
+              Automatically fetch latest sports news from 4 countries in
+              real-time.
+            </p>
+            <div class="status-badge-leo idle" id="scraperStatus">Idle</div>
+            <div class="toolkit-actions">
+              <button
+                class="btn-toolkit-primary"
+                id="scraperBtn"
+                onclick="ejecutarScraper()"
+              >
+                Update News
+              </button>
+              <button
+                class="btn-toolkit-ghost"
+                onclick="limpiarCacheCarousel()"
+              >
+                Refresh Carousel
+              </button>
+              <button class="btn-toolkit-ghost" onclick="limpiarLogs()">
+                Clear Logs
+              </button>
+            </div>
+          </div>
+
+          <!-- Bot -->
+          <div class="toolkit-card">
+            <div class="toolkit-icon">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+            <h3 class="toolkit-title">Telegram Bot</h3>
+            <p class="toolkit-desc">
+              Automated video generation via Telegram with approval workflow.
+            </p>
+            <div class="status-badge-leo idle" id="botStatus">Inactive</div>
+            <div class="toolkit-actions">
+              <button
+                class="btn-toolkit-primary"
+                id="botBtn"
+                onclick="iniciarBot()"
+              >
+                Start Bot
+              </button>
+              <button
+                class="btn-toolkit-ghost"
+                id="stopBotBtn"
+                onclick="detenerBot()"
+                disabled
+              >
+                Stop Bot
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIDEO GENERATION (Main Feature) -->
+    <section class="generation-section" id="generation">
+      <div class="container-wide">
+        <div class="section-header-leo centered">
+          <h2 class="section-title-leo">Create Your Video</h2>
+          <p class="section-subtitle-leo">
+            Upload your photo, describe what you want, and let AI do the magic
+          </p>
+        </div>
+
+        <div class="generation-card">
+          <div class="generation-grid">
+            <!-- Left: Form -->
+            <div class="generation-form">
+              <div class="form-section">
+                <label class="form-label-leo">Upload Photo</label>
+                <div class="upload-zone" id="uploadZone">
+                  <input type="file" id="photoUpload" accept="image/*" hidden />
+                  <div class="upload-content">
+                    <div class="upload-icon">
+                      <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                      >
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                    </div>
+                    <p class="upload-text" id="uploadText">
+                      Click to upload or drag & drop
+                    </p>
+                    <p class="upload-hint">PNG, JPG up to 5MB</p>
+                  </div>
+                  <img
+                    id="previewImage"
+                    class="upload-preview-img"
+                    style="display: none"
+                  />
+                </div>
+
+                <!-- Image comparison -->
+                <div
+                  class="image-comparison"
+                  id="imageComparison"
+                  style="display: none"
+                >
+                  <div class="comparison-header">
+                    <h4>AI Transformation Preview</h4>
+                    <p>
+                      Your photo was transformed into a professional host style.
+                    </p>
+                  </div>
+                  <div class="comparison-container">
+                    <div class="comparison-side">
+                      <div class="comparison-label">Original</div>
+                      <div class="comparison-frame">
+                        <img id="originalImage" alt="Original" />
+                      </div>
+                    </div>
+                    <div class="comparison-divider">
+                      <div class="comparison-arrow">→</div>
+                    </div>
+                    <div class="comparison-side">
+                      <div class="comparison-label highlight">Transformed</div>
+                      <div class="comparison-frame transformed">
+                        <img id="transformedImage" alt="AI Transformed" />
+                        <div class="transformation-badge">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                            <path d="M2 17l10 5 10-5" />
+                            <path d="M2 12l10 5 10-5" />
+                          </svg>
+                          AI Enhanced
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <label class="form-label-leo">Voice Type</label>
+                <select id="voiceSelect" class="select-leo">
+                  <option value="" disabled selected>Select a voice...</option>
+                  <option value="female">Female - adult</option>
+                  <option value="female_old">Female - older</option>
+                  <option value="male">Male - adult</option>
+                  <option value="male_old">Male - older</option>
+                  <!-- new -->
+                  <option value="female_soft">Female - Soft</option>
+                  <option value="female_news">Female - News</option>
+                  <option value="male_broadcast">Male - Broadcast</option>
+                  <option value="male_casual">Male - Casual</option>
+                  <option value="neutral_news">Neutral - News</option>
+                </select>
+              </div>
+
+              <div class="form-section">
+                <label class="form-label-leo">News Query</label>
+                <input
+                  type="text"
+                  id="consultaInput"
+                  class="input-leo"
+                  placeholder="e.g. news about Trump, latest from France, Gaza situation"
+                />
+                <p class="form-hint-leo">
+                  Ask naturally: "Tell me about...", "What's happening with...",
+                  "Latest news on..."
+                </p>
+              </div>
+
+              <button
+                class="btn-generate-leo"
+                id="generateBtn"
+                onclick="generarVideoManual()"
+              >
+                <span>Generate Request</span>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+              </button>
+
+              <!-- Session info -->
+              <div class="session-info" id="sessionInfo" style="display: none">
+                <strong>Session:</strong> <span id="currentSessionId"></span
+                ><br />
+                <strong>Status:</strong>
+                <span id="sessionStatus">Waiting for approval</span>
+              </div>
+
+              <!-- Approval buttons -->
+              <div class="approval-buttons" id="approvalButtons">
+                <div class="btn-group" style="justify-content: center">
+                  <button
+                    class="btn approve"
+                    id="approveBtn"
+                    onclick="aprobarScript()"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    class="btn reject"
+                    id="rejectBtn"
+                    onclick="rechazarScript()"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: System Logs -->
+            <div class="generation-logs">
+              <div class="logs-header">
+                <h4>System Logs</h4>
+                <button class="btn-clear-logs" onclick="limpiarLogs()">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="1 4 1 10 7 10" />
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                  </svg>
+                  Clear
+                </button>
+              </div>
+              <div class="log-output-leo" id="logOutput">
+                System started. Ready to execute commands...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SHOWCASE / GALLERY -->
+    <section class="showcase-section" id="showcase">
+      <div class="container-wide">
+        <div class="section-header-leo centered">
+          <h2 class="section-title-leo">Recent Creations</h2>
+          <p class="section-subtitle-leo">Videos generated by our AI system</p>
+        </div>
+
+        <!-- Video Grid (random from final_videos) -->
+        <div class="showcase-grid" id="showcaseGrid">
+          <!-- Will be populated dynamically -->
+          <div class="showcase-card skeleton"></div>
+          <div class="showcase-card skeleton"></div>
+          <div class="showcase-card skeleton"></div>
+          <div class="showcase-card skeleton"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer-leo">
+      <div class="container-wide">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <div class="logo">
+              <img
+                src="/images/logo.png"
+                alt="Logo"
+                width="28"
+                height="28"
+                style="border-radius: 4px"
+              />
+              <span class="logo-text">Build Your Influencer</span>
+            </div>
+            <p class="footer-tagline">
+              AI-powered video generation for the modern age.
+            </p>
+          </div>
+          <div class="footer-links">
+            <div class="footer-column">
+              <h5>Product</h5>
+              <a href="#features">Features</a>
+              <a href="#pricing">Pricing</a>
+              <a href="#api">API</a>
+            </div>
+            <div class="footer-column">
+              <h5>Company</h5>
+              <a href="#about">About</a>
+              <a href="#blog">Blog</a>
+              <a href="#careers">Careers</a>
+            </div>
+            <div class="footer-column">
+              <h5>Resources</h5>
+              <a href="#docs">Documentation</a>
+              <a href="#support">Support</a>
+              <a href="#status">Status</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; 2025 Build Your Influencer. All rights reserved.</p>
+          <div class="footer-legal">
+            <a href="#privacy">Privacy</a>
+            <a href="#terms">Terms</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- DIALOGS (unchanged) -->
+    <dialog id="approvalDialog" class="dialog leo-modal">
+      <form method="dialog" class="dialog-body">
+        <header class="dialog-header">
+          <h2>Review Generated Script</h2>
+          <button value="close" aria-label="Close" class="dialog-close">
+            ✕
+          </button>
+        </header>
+        <section class="dialog-content">
+          <div class="script-meta">
+            <div>
+              <strong>Session:</strong> <span id="dlgSessionId">-</span>
+            </div>
+            <div><strong>Query:</strong> <span id="dlgQuery">-</span></div>
+            <div><small id="dlgWordCount">0 words</small></div>
+          </div>
+          <pre id="dlgScript" class="script-box">
+Script will appear here...</pre
+          >
+        </section>
+        <footer class="dialog-actions">
+          <button id="dlgReject" class="btn danger" type="button">
+            Reject
+          </button>
+          <button id="dlgApprove" class="btn primary" type="button">
+            Approve
+          </button>
+        </footer>
+      </form>
+    </dialog>
+
+
+
+    <dialog id="progressDialog" class="dialog leo-modal progress-modal">
+      <form method="dialog" class="dialog-body">
+        <header class="dialog-header">
+          <h2>Generating Video...</h2>
+          <button value="close" aria-label="Close" class="dialog-close">
+            ✕
+          </button>
+        </header>
+        <section class="dialog-content">
+          <div class="progress-container">
+            <!-- Left side: Steps and Mini logs -->
+            <div class="progress-left">
+              <div class="progress-steps">
+                <div class="step completed" id="step1">Script Approved</div>
+                <div class="step active" id="step2">Processing Audio</div>
+                <div class="step" id="step3">Processing Image</div>
+                <div class="step" id="step4">Creating Video</div>
+                <div class="step" id="step5">Complete</div>
+              </div>
+              <div class="progress-logs" id="progressLogs">
+                System logs will appear here...
+              </div>
+            </div>
+
+            <!-- Right side: Video container with loader -->
+            <div class="progress-right">
+              <!-- Compact image comparison for progress modal -->
+              <div class="progress-image-comparison" id="progressImageComparison" style="display: none">
+                <div class="progress-comparison-header">
+                  <h5>Character Transformation</h5>
+                </div>
+                <div class="progress-comparison-container">
+                  <div class="progress-comparison-side">
+                    <div class="progress-comparison-label">Original</div>
+                    <div class="progress-comparison-frame">
+                      <img id="progressOriginalImage" alt="Original" />
+                    </div>
+                  </div>
+                  <div class="progress-comparison-divider">→</div>
+                  <div class="progress-comparison-side">
+                    <div class="progress-comparison-label highlight">AI Enhanced</div>
+                    <div class="progress-comparison-frame">
+                      <img id="progressTransformedImage" alt="AI Transformed" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="video-container loading" id="videoContainer">
+                <div class="progress-loader" id="progressLoader">
+                  <div class="spinner"></div>
+                  <div class="progress-loader-text">Generating video...</div>
+                </div>
+                <video
+                  class="progress-video"
+                  id="progressVideo"
+                  controls
+                  style="display: none"
+                >
+                  <source id="progressVideoSrc" src="" type="video/mp4" />
+                </video>
+                <div
+                  class="progress-video-info"
+                  id="progressVideoInfo"
+                  style="display: none"
+                >
+                  <span id="progressVideoName">video.mp4</span> -
+                  <span id="progressVideoSize">0 MB</span>
+                </div>
+              </div>
+              <p
+                style="
+                  font-size: 0.9rem;
+                  opacity: 0.8;
+                  text-align: center;
+                  margin: 0;
+                "
+              >
+                This process may take 8-10 minutes. You can close this dialog
+                and the generation will continue.
+              </p>
+            </div>
+          </div>
+        </section>
+        <footer class="dialog-actions">
+          <button class="btn secondary" value="close" id="progressCloseBtn" style="display: none;">Close</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <!-- Scripts Optimized -->
+    <script src="/frontend/dashboard.modals.js"></script>
+    <script src="/frontend/dashboard-optimized.js"></script>
+    <script src="/frontend/newdashboard.js"></script>
+    <link rel="stylesheet" href="/frontend/modals.leonardo.css" />
+    <script src="/frontend/leonardo-behavior-optimized.js"></script>
+
+    <!-- Hero Images Dynamic Loading -->
+    <script>
+      // Load hero images dynamically from /images/modified
+      async function loadHeroImages() {
+        try {
+          const response = await fetch("/api/images/available");
+          const result = await response.json();
+
+          if (result.success && result.images.length > 0) {
+            // Filter only images from modified folder
+            const modifiedImages = result.images.filter((img) =>
+              img.includes("/modified/")
+            );
+
+            if (modifiedImages.length >= 2) {
+              // Update hero images
+              const heroImg1 = document.querySelector(".hero-card-1 img");
+              const heroImg2 = document.querySelector(".hero-card-2 img");
+
+              if (heroImg1) heroImg1.src = modifiedImages[0];
+              if (heroImg2) heroImg2.src = modifiedImages[1];
+
+              console.log(
+                "✅ Hero images loaded from:",
+                modifiedImages.slice(0, 2)
+              );
+            }
+          }
+        } catch (error) {
+          console.log("⚠️ Could not load dynamic hero images, using defaults");
+        }
+      }
+
+      // Load when page is ready
+      document.addEventListener("DOMContentLoaded", loadHeroImages);
+    </script>
+
+
+  </body>
+</html>

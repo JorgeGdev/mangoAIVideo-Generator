@@ -1,0 +1,1106 @@
+/* ===== Leonardo-style overlay for native <dialog> =====
+   - Se carga DESPUÉS de modals.css y sobre-escribe lo necesario
+   - No toca tu JS. Solo usa la clase .leo-modal en <dialog>
+================================================================ */
+
+:root{
+  /* paleta Leonardo-ish (puedes ajustar a tu gusto) */
+  --leo-bg-1: #1a1333;         /* morado profundo */
+  --leo-bg-2: #2a1647;         /* violeta */
+  --leo-grad-1: #7e4df3;       /* morado brillante */
+  --leo-grad-2: #f04b96;       /* magenta coral */
+  --leo-glass: rgba(18, 14, 28, .55);
+  --leo-stroke: rgba(255,255,255,.08);
+  --leo-text: #f5f1ff;
+  --leo-muted: #cfc6ea;
+
+  --leo-accent: #a779ff;       /* acento violeta */
+  --leo-accent-2: #ff7ab6;     /* acento rosa */
+
+  --leo-radius: 16px;
+  --leo-shadow: 0 12px 40px rgba(12, 6, 22, .55), 0 0 0 1px rgba(255,255,255,.04) inset;
+}
+
+/* Backdrop con grid sutil y degradé radial */
+.leo-modal::backdrop{
+  background:
+    radial-gradient(1200px 600px at 70% 10%, rgba(240,75,150,.18), transparent 60%),
+    radial-gradient(900px 500px at 20% 80%, rgba(126,77,243,.18), transparent 60%),
+    linear-gradient(180deg, rgba(10, 6, 18, .8), rgba(8, 5, 15, .9));
+  /* cuadrícula */
+  mask-image:
+    radial-gradient(transparent 0, transparent 12px, black 12px),
+    linear-gradient(#000, #000);
+  backdrop-filter: blur(3px);
+}
+
+/* Contenedor principal con vidrio y degradé sutil */
+.leo-modal{
+  width: min(880px, 92%);
+  border-radius: var(--leo-radius);
+  border: 1px solid var(--leo-stroke);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
+    radial-gradient(1200px 500px at 80% -10%, rgba(126,77,243,.22), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(240,75,150,.20), transparent 60%),
+    var(--leo-glass);
+  color: var(--leo-text);
+  box-shadow: var(--leo-shadow);
+  backdrop-filter: blur(16px) saturate(120%);
+}
+
+/* Header con barra/halo y subrayado degradé */
+.leo-modal .dialog-header{
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--leo-stroke);
+  position: relative;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .leo-modal .dialog-header {
+    padding: 0.5rem 40px 0.5rem 0 !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .leo-modal .dialog-header h2 {
+    font-size: 1.1rem !important;
+    margin: 0 !important;
+  }
+}
+.leo-modal .dialog-header::after{
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--leo-grad-1), var(--leo-grad-2), transparent);
+  opacity: .5;
+}
+.leo-modal .dialog-header h2{
+  font-size: 1.2rem; letter-spacing: .2px; margin: 0;
+  background: linear-gradient(90deg, #fff, #e7d8ff);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* Cuerpo */
+.leo-modal .dialog-body{ 
+  padding: 18px 18px 20px; 
+  gap: 14px; 
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.leo-modal .dialog-content{ 
+  gap: 12px; 
+  flex: 1 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+@media (max-width: 768px) {
+  .leo-modal .dialog-body {
+    padding: 12px 12px 16px !important;
+    gap: 10px !important;
+  }
+  
+  .leo-modal .dialog-content {
+    gap: 8px !important;
+  }
+}
+.leo-modal .script-meta{ color: var(--leo-muted); }
+
+/* Área del script con borde de vidrio */
+.leo-modal .script-box{
+  background: rgba(10, 7, 18, .65);
+  border: 1px solid var(--leo-stroke);
+  border-radius: 14px;
+  color: var(--leo-text);
+  max-height: 48vh;
+}
+
+/* Botón cerrar (X) */
+.leo-modal .dialog-close{
+  color: #d9cff8;
+  border-radius: 10px;
+  position: relative !important;
+  z-index: 1000 !important;
+  flex-shrink: 0 !important;
+}
+.leo-modal .dialog-close:hover{
+  color: #fff;
+  background: rgba(255,255,255,.06);
+}
+
+@media (max-width: 768px) {
+  .leo-modal .dialog-close {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 6px !important;
+    font-size: 14px !important;
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    z-index: 1001 !important;
+  }
+}
+
+/* Botones pill con glow */
+.leo-modal .btn{
+  border-radius: 999px;
+  border: 1px solid var(--leo-stroke);
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  color: var(--leo-text);
+  transition: transform .08s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
+}
+.leo-modal .btn:hover{ transform: translateY(-1px); }
+.leo-modal .btn:active{ transform: translateY(0); opacity:.92; }
+
+.leo-modal .btn.primary{
+  background:
+    radial-gradient(60% 120% at 20% 10%, rgba(167,121,255,.35), transparent),
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+  box-shadow: 0 0 0 0 rgba(167,121,255,.5);
+}
+.leo-modal .btn.primary:hover{
+  box-shadow:
+    0 10px 28px rgba(167,121,255,.25),
+    0 0 0 1px rgba(167,121,255,.35) inset;
+}
+
+.leo-modal .btn.secondary{
+  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+}
+
+.leo-modal .btn.danger{
+  background:
+    radial-gradient(60% 120% at 20% 10%, rgba(255,122,182,.35), transparent),
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+}
+.leo-modal .btn.danger:hover{
+  box-shadow:
+    0 10px 28px rgba(255,122,182,.25),
+    0 0 0 1px rgba(255,122,182,.35) inset;
+}
+
+
+
+/* Línea de acciones con blur abajo */
+.leo-modal .dialog-actions{
+  padding-top: 6px;
+  border-top: 1px solid var(--leo-stroke);
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.00));
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+}
+
+@media (max-width: 768px) {
+  .leo-modal .dialog-actions {
+    padding: 0.75rem 0 0.5rem 0 !important;
+    margin-top: 0.5rem !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    background: var(--leo-glass) !important;
+    backdrop-filter: blur(16px) !important;
+  }
+}
+
+/* Accesibilidad y rendimiento */
+@media (prefers-reduced-motion: reduce){
+  .leo-modal .btn,
+  .leo-modal .dialog-close{ transition: none!important; }
+}
+@media (max-width: 540px){
+  .leo-modal{ width: 94%; }
+  .leo-modal .dialog-body{ padding: 14px; }
+  .leo-modal .dialog-header h2{ font-size: 1.05rem; }
+}
+
+/* ============================================================================
+   UPLOAD ZONE ENHANCEMENTS - Leonardo Style
+   ============================================================================ */
+
+/* Drag & Drop States */
+.upload-zone.dragover {
+  border-color: var(--leo-grad-1) !important;
+  background: rgba(126, 77, 243, 0.1) !important;
+  transform: scale(1.02);
+  box-shadow: 
+    0 8px 25px rgba(126, 77, 243, 0.2),
+    inset 0 0 0 2px rgba(126, 77, 243, 0.3);
+  animation: uploadGlow 1s ease-in-out infinite alternate;
+}
+
+@keyframes uploadGlow {
+  0% {
+    box-shadow: 
+      0 8px 25px rgba(126, 77, 243, 0.2),
+      inset 0 0 0 2px rgba(126, 77, 243, 0.3);
+  }
+  100% {
+    box-shadow: 
+      0 12px 35px rgba(126, 77, 243, 0.4),
+      inset 0 0 0 2px rgba(126, 77, 243, 0.5);
+  }
+}
+
+.upload-zone.dragover .upload-icon svg {
+  color: var(--leo-grad-1) !important;
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 8px rgba(126, 77, 243, 0.5));
+}
+
+.upload-zone.dragover .upload-text {
+  color: var(--leo-grad-1) !important;
+  text-shadow: 0 0 12px rgba(126, 77, 243, 0.3);
+}
+
+/* File Selected State */
+.upload-zone.has-file {
+  border-color: var(--leo-accent);
+  background: rgba(167, 121, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(167, 121, 255, 0.15);
+}
+
+.upload-zone.has-file .upload-text {
+  color: var(--leo-accent);
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(167, 121, 255, 0.3);
+}
+
+/* Upload Preview Image - Leonardo Style */
+.upload-preview-img {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  border-radius: 12px;
+  border: 2px solid var(--leo-accent);
+  box-shadow: 
+    0 8px 25px rgba(167, 121, 255, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  margin-top: 12px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.upload-preview-img:hover {
+  transform: scale(1.05) rotate(1deg);
+  box-shadow: 
+    0 12px 35px rgba(167, 121, 255, 0.3),
+    0 0 0 2px rgba(167, 121, 255, 0.4) inset;
+}
+
+/* Upload Icon Animations - Leonardo Style */
+.upload-icon svg {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.upload-zone:hover .upload-icon svg {
+  transform: translateY(-3px) scale(1.1);
+  color: var(--leo-grad-1);
+  filter: drop-shadow(0 4px 12px rgba(126, 77, 243, 0.3));
+}
+
+/* Upload Content Animations */
+.upload-content {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.upload-zone:hover .upload-content {
+  transform: translateY(-2px);
+}
+
+/* Upload Text Enhancements */
+.upload-text {
+  transition: all 0.3s ease;
+  word-break: break-all;
+  max-width: 100%;
+  position: relative;
+}
+
+.upload-hint {
+  transition: all 0.3s ease;
+  opacity: 0.7;
+  color: var(--leo-muted);
+}
+
+.upload-zone:hover .upload-hint {
+  opacity: 1;
+  color: var(--leo-accent);
+  text-shadow: 0 0 6px rgba(167, 121, 255, 0.2);
+}
+
+/* Error States - Leonardo Style */
+.upload-zone.error {
+  border-color: var(--leo-accent-2);
+  background: rgba(255, 122, 182, 0.05);
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Loading States - Leonardo Style */
+.upload-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.upload-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--leo-glass);
+  backdrop-filter: blur(4px);
+  border-radius: inherit;
+  z-index: 10;
+}
+
+.upload-loading::before {
+  content: '✨';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  z-index: 11;
+  animation: uploadBounce 1s infinite;
+}
+
+@keyframes uploadBounce {
+  0%, 100% { 
+    transform: translate(-50%, -50%) scale(1);
+    filter: drop-shadow(0 0 8px rgba(167, 121, 255, 0.5));
+  }
+  50% { 
+    transform: translate(-50%, -50%) scale(1.2);
+    filter: drop-shadow(0 0 16px rgba(167, 121, 255, 0.8));
+  }
+}
+
+/* ============================================================================
+   IMAGE COMPARISON STYLES - Leonardo AI Transformation Preview
+   ============================================================================ */
+
+.image-comparison {
+  width: 70vw;
+  max-width: 800px;
+  margin: 20px auto;
+  background: linear-gradient(135deg, rgba(126, 77, 243, 0.1), rgba(240, 75, 150, 0.1));
+  border: 1px solid var(--leo-stroke);
+  border-radius: var(--leo-radius);
+  padding: 20px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--leo-shadow);
+}
+
+.comparison-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.comparison-header h4 {
+  color: var(--leo-text);
+  font-size: 1.4rem;
+  margin: 0 0 8px 0;
+  background: linear-gradient(90deg, var(--leo-grad-1), var(--leo-grad-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+
+.comparison-header p {
+  color: var(--leo-muted);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.comparison-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.comparison-side {
+  flex: 1;
+  min-width: 200px;
+  max-width: 280px;
+  text-align: center;
+}
+
+.comparison-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--leo-muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.comparison-label.highlight {
+  color: var(--leo-grad-1);
+  text-shadow: 0 0 8px rgba(126, 77, 243, 0.3);
+}
+
+.comparison-frame {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--leo-stroke);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.comparison-frame:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+}
+
+.comparison-frame.transformed {
+  border-color: var(--leo-grad-1);
+  box-shadow: 
+    0 8px 25px rgba(126, 77, 243, 0.2),
+    0 0 0 1px rgba(126, 77, 243, 0.3) inset;
+}
+
+.comparison-frame img {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+  display: block;
+}
+
+.comparison-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.comparison-arrow {
+  background: linear-gradient(90deg, var(--leo-grad-1), var(--leo-grad-2));
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  box-shadow: 
+    0 8px 25px rgba(126, 77, 243, 0.3),
+    0 0 0 2px rgba(255, 255, 255, 0.1) inset;
+  animation: arrowPulse 2s ease-in-out infinite;
+}
+
+@keyframes arrowPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 
+      0 8px 25px rgba(126, 77, 243, 0.3),
+      0 0 0 2px rgba(255, 255, 255, 0.1) inset;
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 
+      0 12px 35px rgba(126, 77, 243, 0.5),
+      0 0 0 3px rgba(255, 255, 255, 0.2) inset;
+  }
+}
+
+.transformation-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, var(--leo-grad-1), var(--leo-grad-2));
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 15px rgba(126, 77, 243, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+.transformation-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+  .image-comparison {
+    width: 90vw;
+    padding: 15px;
+  }
+  
+  .comparison-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .comparison-divider {
+    transform: rotate(90deg);
+  }
+  
+  .comparison-side {
+    max-width: 100%;
+  }
+  
+  .comparison-frame img {
+    max-height: 250px;
+  }
+}
+
+/* ============================================================================
+   ANIMATED HEART - Google Style Animation
+   ============================================================================ */
+
+.animated-heart {
+  display: inline-block;
+  animation: heartBeat 1.5s ease-in-out infinite;
+  transform-origin: center;
+  font-size: inherit;
+}
+
+@keyframes heartBeat {
+  0% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.2);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.2);
+  }
+  70% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Variante más sutil */
+.animated-heart.subtle {
+  animation: heartBeatSubtle 2s ease-in-out infinite;
+}
+
+@keyframes heartBeatSubtle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Variante pulsante */
+.animated-heart.pulse {
+  animation: heartPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes heartPulse {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  100% {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+  }
+}
+
+/* ============================================================================
+   PROGRESS MODAL - FULL SIZE AND PROPER POSITIONING
+   ============================================================================ */
+
+.progress-modal {
+  width: min(95vw, 1100px) !important;
+  max-width: 1100px !important;
+  max-height: min(95vh, 700px) !important;
+  margin: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  position: fixed !important;
+}
+
+.progress-modal .dialog-body {
+  width: 100% !important;
+  height: min(85vh, 650px) !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 320px !important;
+  min-height: 400px !important;
+  padding: 1.5rem !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.progress-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  padding: 0 !important;
+  height: 100% !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+}
+
+.progress-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.progress-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.progress-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.step {
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0.5;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.step.active {
+  opacity: 1;
+  background: rgba(167, 139, 250, 0.2);
+  border-color: rgba(167, 139, 250, 0.5);
+}
+
+.step.completed {
+  opacity: 1;
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+/* Mini logs */
+.progress-logs {
+  flex: 1 !important;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.75rem;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: pre-line;
+  min-height: 150px !important;
+  max-height: 300px !important;
+}
+
+.progress-logs::-webkit-scrollbar {
+  width: 4px;
+}
+
+.progress-logs::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.progress-logs::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.5);
+  border-radius: 2px;
+}
+
+/* Video/Loader container */
+.video-container {
+  flex: 1 !important;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px dashed rgba(167, 139, 250, 0.3);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 250px !important;
+  max-height: 400px !important;
+  overflow: hidden !important;
+  padding: 8px !important;
+  box-sizing: border-box !important;
+}
+
+.video-container.loading {
+  border-color: rgba(167, 139, 250, 0.6);
+}
+
+.video-container.preview {
+  border: 2px solid rgba(255, 193, 7, 0.6);
+  background: rgba(0, 0, 0, 0.8);
+  animation: previewGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes previewGlow {
+  0% {
+    border-color: rgba(255, 193, 7, 0.6);
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.2);
+  }
+  100% {
+    border-color: rgba(255, 193, 7, 0.9);
+    box-shadow: 0 0 30px rgba(255, 193, 7, 0.4);
+  }
+}
+
+.video-container.complete {
+  border: 2px solid rgba(34, 197, 94, 0.6);
+  background: rgba(0, 0, 0, 0.8);
+  animation: none;
+}
+
+/* Loader */
+.progress-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(167, 139, 250, 0.2);
+  border-top: 4px solid rgba(167, 139, 250, 1);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  0% { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.progress-loader-text {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Video preview */
+.progress-video {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 100% !important;
+  border-radius: 8px;
+  object-fit: contain !important;
+  aspect-ratio: 9/16 !important;
+  max-width: 100% !important;
+}
+
+.progress-video-info {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ============================================================================
+   RESPONSIVE MODAL ADJUSTMENTS
+   ============================================================================ */
+
+/* Para pantallas medianas */
+@media (max-width: 1200px) {
+  .progress-modal {
+    width: 95vw !important;
+    max-width: 900px !important;
+    height: 88vh !important;
+    max-height: 650px !important;
+  }
+  
+  .progress-modal .dialog-body {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 300px !important;
+    padding: 1.25rem !important;
+  }
+  
+  .progress-container {
+    gap: 1rem !important;
+  }
+}
+
+/* Para tablets */
+@media (max-width: 1024px) {
+  .progress-modal {
+    width: 96vw !important;
+    height: 90vh !important;
+  }
+  
+  .progress-container {
+    gap: 0.875rem !important;
+  }
+  
+  .video-container {
+    max-height: 300px !important;
+  }
+  
+  .progress-logs {
+    max-height: 200px !important;
+  }
+}
+
+/* Para pantallas muy pequeñas - modal apilado */
+@media (max-width: 768px) {
+  .progress-modal {
+    width: 98vw !important;
+    max-width: 98vw !important;
+    height: 95vh !important;
+    max-height: 95vh !important;
+    top: 2.5vh !important;
+    left: 1vw !important;
+    transform: none !important;
+    margin: 0 !important;
+    position: fixed !important;
+  }
+  
+  .progress-modal .dialog-body {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 280px !important;
+    padding: 0.75rem !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+  
+  .progress-modal .dialog-header {
+    padding: 0.75rem 0 0.5rem 0 !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .progress-container {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+    overflow-y: auto !important;
+    max-height: calc(100% - 100px) !important;
+  }
+  
+  .progress-right {
+    order: -1 !important; /* Video arriba en móviles */
+    max-height: 250px !important;
+  }
+  
+  .progress-left {
+    flex: 1 !important;
+    min-height: 200px !important;
+  }
+  
+  .step {
+    padding: 0.5rem !important;
+    font-size: 0.85rem !important;
+  }
+  
+  .progress-logs {
+    min-height: 100px !important;
+    max-height: 150px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .video-container {
+    min-height: 180px !important;
+    max-height: 220px !important;
+  }
+  
+  .progress-video {
+    max-width: 100% !important;
+    max-height: 200px !important;
+  }
+  
+  .progress-image-comparison {
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .progress-comparison-frame {
+    width: 60px !important;
+    height: 60px !important;
+  }
+}
+
+/* Prevención de overflow horizontal global */
+.leo-modal {
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* MODAL CENTERING FIX */
+.leo-modal:not(.progress-modal) {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0 !important;
+}
+
+.progress-modal {
+  overflow: hidden;
+}
+
+.progress-modal .dialog-body {
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.progress-container {
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Asegurar que el contenido interno no desborde */
+.progress-left,
+.progress-right {
+  min-width: 0; /* Permite que los elementos se encojan */
+  overflow: hidden;
+}
+
+.progress-logs {
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+/* Asegurar que elementos hijos respeten los contenedores */
+.progress-steps .step {
+  word-break: break-word;
+}
+
+.video-container {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ============================================================================
+   PROGRESS MODAL - COMPACT IMAGE COMPARISON
+   ============================================================================ */
+
+.progress-image-comparison {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  min-height: 120px !important;
+}
+
+.progress-comparison-header h5 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+}
+
+.progress-comparison-container {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.progress-comparison-side {
+  text-align: center;
+}
+
+.progress-comparison-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.progress-comparison-label.highlight {
+  color: var(--leo-primary);
+}
+
+.progress-comparison-frame {
+  width: 90px !important;
+  height: 90px !important;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0 auto;
+}
+
+.progress-comparison-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.progress-comparison-divider {
+  font-size: 1.2rem;
+  color: var(--leo-primary);
+  font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .progress-image-comparison {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .progress-comparison-frame {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .progress-comparison-header h5 {
+    font-size: 0.8rem;
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "admin": {
+    "password": "$2b$10$nzvHIjQE.7C4MmKtp70K3u5zSip/f1uCDztGLvoo.WP9bpXKl9Gmu",
+    "role": "admin",
+    "name": "Administrador",
+    "email": "polloandres82@gmail.com",
+    "created": "2025-24-07",
+    "active": true
+  },
+  "polloandres82": {
+    "password": "$2b$10$zK9exqXwA8FM/.g51NHDAuu12DG9SWWgGG15Ux4d71gH4ZkqhNnx6",
+    "role": "user",
+    "name": "Jorge Guerrero",
+    "email": "nz.jorge2156@gmail.com",
+    "created": "2025-07-24",
+    "active": true
+  }
+}

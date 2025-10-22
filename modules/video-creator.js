@@ -20,9 +20,9 @@ const HEDRA_DURATION_MS = Number(process.env.HEDRA_DURATION_MS || 20000);
 // Poll tuning
 const FIRST_WAIT_MS = Number(process.env.HEDRA_FIRST_WAIT_MS || 120000); // first wait after create (2 minutes)
 const POLL_INTERVAL_MS = Number(process.env.HEDRA_POLL_INTERVAL_MS || 30000);
-const POLL_MAX_TRIES = Number(process.env.HEDRA_POLL_MAX_TRIES || 5); // 5 attempts
+const POLL_MAX_TRIES = Number(process.env.HEDRA_POLL_MAX_TRIES || 5); // 5 intentos
 
-console.log(" VIDEO CREATOR INITIALIZED");
+console.log("🎬 VIDEO CREATOR INITIALIZED");
 
 // ====== LOG + optional Telegram ======
 async function logAndNotify(sessionId, message, sendToTelegram = true) {
@@ -36,30 +36,30 @@ async function logAndNotify(sessionId, message, sendToTelegram = true) {
     const { enviarMensaje, CHAT_ID } = require("./telegram-handler");
     await enviarMensaje(CHAT_ID, fullMessage);
   } catch (error) {
-    console.log("Could not send to Telegram:", error.message);
+    console.log("⚠️ Could not send to Telegram:", error.message);
   }
 }
 
 // ====== SYNC ASSETS ======
 async function sincronizarAssets(audioData, imageData, sessionId) {
   try {
-    await logAndNotify(sessionId, "Synchronizing assets for Hedra");
+    await logAndNotify(sessionId, "🔄 Synchronizing assets for Hedra");
     await logAndNotify(
       sessionId,
-      ` Image Asset ID: ${imageData?.imageAssetId || "N/A"}`
+      `📸 Image Asset ID: ${imageData?.imageAssetId || "N/A"}`
     );
     await logAndNotify(
       sessionId,
-      ` Audio Asset ID: ${audioData?.audioAssetId || "N/A"}`
+      `🔊 Audio Asset ID: ${audioData?.audioAssetId || "N/A"}`
     );
 
     if (!audioData?.audioAssetId) throw new Error("Missing audioAssetId");
     if (!imageData?.imageAssetId) throw new Error("Missing imageAssetId");
 
-    await logAndNotify(sessionId, " Waiting Hedra to settle assets (30s)...");
+    await logAndNotify(sessionId, "⏳ Waiting Hedra to settle assets (30s)...");
     await new Promise((r) => setTimeout(r, 30000));
 
-    await logAndNotify(sessionId, "Assets synchronized");
+    await logAndNotify(sessionId, "✅ Assets synchronized");
 
     return {
       imageAssetId: imageData.imageAssetId,
@@ -68,7 +68,7 @@ async function sincronizarAssets(audioData, imageData, sessionId) {
       sincronizado: true,
     };
   } catch (error) {
-    await logAndNotify(sessionId, `Asset sync error: ${error.message}`);
+    await logAndNotify(sessionId, `❌ Asset sync error: ${error.message}`);
     throw error;
   }
 }
@@ -76,7 +76,7 @@ async function sincronizarAssets(audioData, imageData, sessionId) {
 // ====== CREATE VIDEO ======
 async function crearVideo(assetsSync, sessionId) {
   try {
-    await logAndNotify(sessionId, " Creating video with Hedra...");
+    await logAndNotify(sessionId, "🎬 Creating video with Hedra...");
 
     const videoRequest = {
       type: "video",
@@ -92,7 +92,7 @@ async function crearVideo(assetsSync, sessionId) {
       },
     };
 
-    await logAndNotify(sessionId, `Request: ${videoRequest.type} | Model: ${videoRequest.ai_model_id.substring(0, 8)}...`, false);
+    await logAndNotify(sessionId, `� Request: ${videoRequest.type} | Model: ${videoRequest.ai_model_id.substring(0, 8)}...`, false);
 
     const response = await axios.post(
       "https://api.hedra.com/web-app/public/generations",
@@ -106,14 +106,14 @@ async function crearVideo(assetsSync, sessionId) {
       }
     );
 
-    await logAndNotify(sessionId, `Hedra response received - Generation initiated`, false);
+    await logAndNotify(sessionId, `� Hedra response received - Generation initiated`, false);
 
     // Extract both IDs - we need asset_id for status checks
     const generationId = response?.data?.id;
     const assetId = response?.data?.asset_id;
 
     if (!assetId && !generationId) {
-      await logAndNotify(sessionId, `No generation/asset ID found in response: ${JSON.stringify(response.data)}`, false);
+      await logAndNotify(sessionId, `❌ No generation/asset ID found in response: ${JSON.stringify(response.data)}`, false);
       throw new Error("Hedra did not return a generation or asset id");
     }
 
@@ -122,7 +122,7 @@ async function crearVideo(assetsSync, sessionId) {
 
     await logAndNotify(
       sessionId,
-      ` Video initialized in Hedra: ${videoId} (generation: ${generationId}, asset: ${assetId})`
+      `🎬 Video initialized in Hedra: ${videoId} (generation: ${generationId}, asset: ${assetId})`
     );
 
     return {
@@ -132,7 +132,7 @@ async function crearVideo(assetsSync, sessionId) {
   } catch (error) {
     await logAndNotify(
       sessionId,
-      `Error creating video: ${error.response?.status || error.message}`
+      `❌ Error creating video: ${error.response?.status || error.message}`
     );
     throw new Error(`Error creating video: ${error.message}`);
   }
@@ -143,7 +143,7 @@ async function verificarStatusVideo(generationId, sessionId) {
   try {
     await logAndNotify(
       sessionId,
-      `Checking video status: ${generationId}`,
+      `🔍 Checking video status: ${generationId}`,
       false
     );
 
@@ -168,13 +168,13 @@ async function verificarStatusVideo(generationId, sessionId) {
 
     const errorText = videoData?.error || null;
 
-    await logAndNotify(sessionId, ` Video status: ${status}`, false);
+    await logAndNotify(sessionId, `📊 Video status: ${status}`, false);
     
     // Only log full response if we have meaningful data
     if (videoData && Object.keys(videoData).length > 0) {
-      await logAndNotify(sessionId, ` Video data received (${Object.keys(videoData).length} fields)`, false);
+      await logAndNotify(sessionId, `🔍 Video data received (${Object.keys(videoData).length} fields)`, false);
     } else {
-      await logAndNotify(sessionId, ` Video still processing by Hedra...`, false);
+      await logAndNotify(sessionId, `🔍 Video still processing by Hedra...`, false);
     }
 
     // More flexible ready detection - if we have a URL, video is ready
@@ -188,7 +188,7 @@ async function verificarStatusVideo(generationId, sessionId) {
       error: errorText,
     };
   } catch (error) {
-    await logAndNotify(sessionId, `Error checking status: ${error.message}`);
+    await logAndNotify(sessionId, `❌ Error checking status: ${error.message}`);
     throw error;
   }
 }
@@ -196,7 +196,7 @@ async function verificarStatusVideo(generationId, sessionId) {
 // ====== DOWNLOAD FINAL VIDEO ======
 async function descargarVideo(videoUrl, sessionId) {
   try {
-    await logAndNotify(sessionId, "Downloading final video...");
+    await logAndNotify(sessionId, "📥 Downloading final video...");
 
     const response = await axios.get(videoUrl, {
       responseType: "arraybuffer",
@@ -213,7 +213,7 @@ async function descargarVideo(videoUrl, sessionId) {
 
     await logAndNotify(
       sessionId,
-      `Video bytes: ${response.data.byteLength}`
+      `📊 Video bytes: ${response.data.byteLength}`
     );
 
     const now = new Date();
@@ -232,14 +232,14 @@ async function descargarVideo(videoUrl, sessionId) {
 
     await logAndNotify(
       sessionId,
-      `Video saved: ${videoPath} (${videoSize} MB)`
+      `✅ Video saved: ${videoPath} (${videoSize} MB)`
     );
-    await logAndNotify(sessionId, `File verified: ${stats.size} bytes`);
+    await logAndNotify(sessionId, `🔍 File verified: ${stats.size} bytes`);
 
-    // NEW: Automatically generate subtitles
+    // 🎵 NUEVO: Generar automáticamente subtítulos
     let subtitledVideoInfo = null;
     try {
-      await logAndNotify(sessionId, "Starting automatic subtitle generation...");
+      await logAndNotify(sessionId, "🎵 Starting automatic subtitle generation...");
       
       // Importar el procesador de subtítulos
       const { processVideoSubtitles } = require('./subtitle-processor');
@@ -249,13 +249,13 @@ async function descargarVideo(videoUrl, sessionId) {
       
       await logAndNotify(
         sessionId,
-        `Subtitled video created: ${subtitledVideoInfo.subtitledVideoName} (${subtitledVideoInfo.size})`
+        `✅ Subtitled video created: ${subtitledVideoInfo.subtitledVideoName} (${subtitledVideoInfo.size})`
       );
       
     } catch (subtitleError) {
       await logAndNotify(
         sessionId,
-        `Warning: Could not generate subtitles: ${subtitleError.message}`
+        `⚠️ Warning: Could not generate subtitles: ${subtitleError.message}`
       );
       // No fallar todo el proceso por un error de subtítulos
       console.error(`[${sessionId}] Subtitle error (non-fatal):`, subtitleError);
@@ -272,7 +272,7 @@ async function descargarVideo(videoUrl, sessionId) {
   } catch (error) {
     await logAndNotify(
       sessionId,
-      `Error downloading video: ${error.message}`
+      `❌ Error downloading video: ${error.message}`
     );
     throw error;
   }
@@ -281,7 +281,7 @@ async function descargarVideo(videoUrl, sessionId) {
 // ====== MAIN ORCHESTRATION ======
 async function procesarVideoCompleto(audioData, imageData, sessionId) {
   try {
-    await logAndNotify(sessionId, "STARTING FULL VIDEO CREATION");
+    await logAndNotify(sessionId, "🎬 STARTING FULL VIDEO CREATION");
 
     // Step 1: sync assets
     const assetsSync = await sincronizarAssets(audioData, imageData, sessionId);
@@ -292,7 +292,7 @@ async function procesarVideoCompleto(audioData, imageData, sessionId) {
     // Step 3: first wait
     await logAndNotify(
       sessionId,
-      `Waiting video generation (${Math.round(FIRST_WAIT_MS / 1000)}s)...`
+      `⏳ Waiting video generation (${Math.round(FIRST_WAIT_MS / 1000)}s)...`
     );
     await new Promise((r) => setTimeout(r, FIRST_WAIT_MS));
 
@@ -310,13 +310,13 @@ async function procesarVideoCompleto(audioData, imageData, sessionId) {
       if (estado.ready && estado.url) {
         videoListo = true;
         videoUrl = estado.url;
-        await logAndNotify(sessionId, `¡Video ready! Successfully generated by Hedra`);
+        await logAndNotify(sessionId, `🎉 ¡Video listo! Generado correctamente por Hedra`);
       } else if (estado.error) {
         throw new Error(`Error in Hedra: ${estado.error}`);
       } else {
         await logAndNotify(
           sessionId,
-          `Video still processing... try ${intentos + 1}/${POLL_MAX_TRIES}`
+          `⏳ Video aún processing... intento ${intentos + 1}/${POLL_MAX_TRIES}`
         );
         await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
         intentos++;
@@ -327,7 +327,7 @@ async function procesarVideoCompleto(audioData, imageData, sessionId) {
     if (!videoListo) {
       await logAndNotify(
         sessionId,
-        " Timeout during checks, trying direct download..."
+        "⚠️ Timeout en verificaciones, intentando descarga directa..."
       );
 
       // EMPUJÓN: Intentar obtener el video una vez más
@@ -338,23 +338,23 @@ async function procesarVideoCompleto(audioData, imageData, sessionId) {
       if (estadoFinal.url) {
         videoUrl = estadoFinal.url;
         videoListo = true; // *** CRÍTICO: Marcar como listo ***
-        await logAndNotify(sessionId, "Video completed by Hedra - Starting download");
+        await logAndNotify(sessionId, "✅ Video completado por Hedra - Iniciando descarga");
       } else {
         // ÚLTIMO RECURSO: Guardar ID para rescate manual
         await logAndNotify(
           sessionId,
-          `Video not completed after ${intentos} attempts (4 minutes).`
+          `❌ Video no completed tras ${intentos} intentos (4 minutes).`
         );
         await logAndNotify(
           sessionId,
-          `ID for manual recovery: ${videoGeneration.generationId}`
+          `🆔 ID para rescate manual: ${videoGeneration.generationId}`
         );
         await logAndNotify(
           sessionId,
-          ` Hedra may be slow - try again later`
+          `💡 Hedra puede estar lento - intenta más tarde`
         );
         throw new Error(
-          `Video not completed after ${intentos} intentos. ID: ${videoGeneration.generationId}`
+          `Video no completed tras ${intentos} intentos. ID: ${videoGeneration.generationId}`
         );
       }
     }
@@ -364,7 +364,7 @@ async function procesarVideoCompleto(audioData, imageData, sessionId) {
     // Step 6: download
     const videoFinal = await descargarVideo(finalUrl, sessionId);
 
-    await logAndNotify(sessionId, " VIDEO COMPLETED SUCCESSFULLY");
+    await logAndNotify(sessionId, "🎉 VIDEO COMPLETED SUCCESSFULLY");
 
     return {
       archivo: videoFinal.archivo,
@@ -374,7 +374,7 @@ async function procesarVideoCompleto(audioData, imageData, sessionId) {
       success: true,
     };
   } catch (error) {
-    await logAndNotify(sessionId, ` Error in full process: ${error.message}`);
+    await logAndNotify(sessionId, `❌ Error in full process: ${error.message}`);
     throw error;
   }
 }

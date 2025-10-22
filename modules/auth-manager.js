@@ -3,50 +3,50 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs').promises;
 const path = require('path');
 
-console.log('AUTH MANAGER INITIALIZED');
+console.log('🔐 AUTH MANAGER INITIALIZED');
 
 const USERS_FILE = path.join(__dirname, '..', 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 
-// Load users from file
-async function loadUsers() {
+// Cargar users desde archivo
+async function cargarUsers() {
   try {
     const data = await fs.readFile(USERS_FILE, 'utf8');
     return JSON.parse(data);
   } catch (error) {
-    console.error('Error loading users:', error.message);
+    console.error('❌ Error cargando users:', error.message);
     return {};
   }
 }
 
-// Save users to file
-async function saveUsers(users) {
+// Guardar users en archivo
+async function guardarUsers(users) {
   try {
     await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
     return true;
   } catch (error) {
-    console.error('Error saving users:', error.message);
+    console.error('❌ Error guardando users:', error.message);
     return false;
   }
 }
 
-// Validate credentials
-async function validateCredentials(username, password) {
+// Validar credenciales
+async function validarCredenciales(username, password) {
   try {
-    const users = await loadUsers();
+    const users = await cargarUsers();
     const user = users[username];
     
     if (!user || !user.active) {
-      return { success: false, message: 'User not found or inactive' };
+      return { success: false, message: 'User not found o inactive' };
     }
     
-    const validPassword = await bcrypt.compare(password, user.password);
+    const passwordValida = await bcrypt.compare(password, user.password);
     
-    if (!validPassword) {
+    if (!passwordValida) {
       return { success: false, message: 'Incorrect password' };
     }
     
-    // Create JWT token
+    // Crear JWT token
     const token = jwt.sign(
       { 
         username: username,
@@ -68,13 +68,13 @@ async function validateCredentials(username, password) {
     };
     
   } catch (error) {
-    console.error('Error validating credentials:', error.message);
-    return { success: false, message: 'Internal error' };
+    console.error('❌ Error validando credenciales:', error.message);
+    return { success: false, message: 'Error interno' };
   }
 }
 
-// Verify JWT token
-function verifyToken(token) {
+// Verificar JWT token
+function verificarToken(token) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     return { success: true, user: decoded };
@@ -83,25 +83,26 @@ function verifyToken(token) {
   }
 }
 
-// Create new user (admin only) - VERSION WITH EMAIL
-async function createUser(username, password, name, email, role = 'user') {
+// Crear nuevo user (solo admin)
+// Crear nuevo user (solo admin) - VERSIÓN CON EMAIL
+async function crearUser(username, password, name, email, role = 'user') {
   try {
-    const users = await loadUsers();
+    const users = await cargarUsers();
     
     if (users[username]) {
-      return { success: false, message: 'User already exists' };
+      return { success: false, message: 'User ya existe' };
     }
     
-    // Basic email validation
+    // Validar email básico
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return { success: false, message: 'Invalid email' };
+      return { success: false, message: 'Email inválido' };
     }
     
-    // Check if email is already in use
-    const emailInUse = Object.values(users).some(user => user.email === email);
-    if (emailInUse) {
-      return { success: false, message: 'Email is already in use' };
+    // Verificar que el email no esté en uso
+    const emailEnUso = Object.values(users).some(user => user.email === email);
+    if (emailEnUso) {
+      return { success: false, message: 'Email ya está en uso' };
     }
     
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -110,53 +111,54 @@ async function createUser(username, password, name, email, role = 'user') {
       password: hashedPassword,
       role: role,
       name: name,
-      email: email,
+      email: email, // NUEVO CAMPO
       created: new Date().toISOString().split('T')[0],
       active: true
     };
     
-    const saved = await saveUsers(users);
+    const guardado = await guardarUsers(users);
     
-    if (saved) {
+    if (guardado) {
       return { success: true, message: 'User created successfully' };
     } else {
-      return { success: false, message: 'Error saving user' };
+      return { success: false, message: 'Error guardando user' };
     }
     
   } catch (error) {
-    console.error('Error creating user:', error.message);
-    return { success: false, message: 'Internal error' };
+    console.error('❌ Error creating user:', error.message);
+    return { success: false, message: 'Error interno' };
   }
 }
 
-// List users (admin only) - VERSION WITH EMAIL
-async function listUsers() {
+// Listar users (solo admin)
+// Listar users (solo admin) - VERSIÓN CON EMAIL
+async function listarUsers() {
   try {
-    const users = await loadUsers();
-    const list = Object.keys(users).map(username => ({
+    const users = await cargarUsers();
+    const lista = Object.keys(users).map(username => ({
       username: username,
       name: users[username].name,
-      email: users[username].email || 'No email',
+      email: users[username].email || 'Sin email', // NUEVO CAMPO
       role: users[username].role,
       created: users[username].created,
       active: users[username].active
     }));
     
-    return { success: true, users: list };
+    return { success: true, users: lista };
   } catch (error) {
-    return { success: false, message: 'Error loading users' };
+    return { success: false, message: 'Error cargando users' };
   }
 }
 
-// Authentication middleware for Express
+// Middleware de autenticación para Express
 function requireAuth(req, res, next) {
   const token = req.cookies?.auth_token || req.headers.authorization?.split(' ')[1];
   
   if (!token) {
-    return res.status(401).json({ success: false, message: 'Unauthorized' });
+    return res.status(401).json({ success: false, message: 'No autorizado' });
   }
   
-  const verification = verifyToken(token);
+  const verification = verificarToken(token);
   
   if (!verification.success) {
     return res.status(401).json({ success: false, message: 'Invalid token' });
@@ -166,19 +168,19 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Admin-only middleware
+// Middleware solo para admin
 function requireAdmin(req, res, next) {
   if (req.user.role !== 'admin') {
-    return res.status(403).json({ success: false, message: 'Administrator permissions required' });
+    return res.status(403).json({ success: false, message: 'Se requieren permisos de administrador' });
   }
   next();
 }
 
 module.exports = {
-  validateCredentials,
-  verifyToken,
-  createUser,
-  listUsers,
+  validarCredenciales,
+  verificarToken,
+  crearUser,
+  listarUsers,
   requireAuth,
   requireAdmin
 };

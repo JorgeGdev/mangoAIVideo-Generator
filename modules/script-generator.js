@@ -11,16 +11,16 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-console.log("🤖 SCRIPT GENERATOR INITIALIZED");
+console.log("SCRIPT GENERATOR INITIALIZED");
 
 // Function RAG para buscar en la base de data usando búsqueda semántica inteligente
 async function queryrRAG(query) {
   try {
-    console.log(`🔍 [RAG] Intelligent semantic search for: "${query}"`);
+    console.log(`[RAG] Intelligent semantic search for: "${query}"`);
 
     // PASO 1: Usar IA para expandir y entender el contexto de la query
     const contextualQuery = await expandQueryWithAI(query);
-    console.log(`🧠 [RAG] AI understood query as: "${contextualQuery}"`);
+    console.log(`[RAG] AI understood query as: "${contextualQuery}"`);
 
     // PASO 2: Búsqueda semántica usando vectores
     let semanticResults = [];
@@ -45,14 +45,14 @@ async function queryrRAG(query) {
       }
     } catch (embeddingError) {
       console.error(
-        "❌ [RAG] Embedding search failed:",
+        "[RAG] Embedding search failed:",
         embeddingError.message
       );
     }
 
     // PASO 3: Si búsqueda semántica falla, usar búsqueda inteligente por texto
     if (semanticResults.length === 0) {
-      console.log(`🔄 [RAG] Falling back to intelligent text search...`);
+      console.log(`[RAG] Falling back to intelligent text search...`);
       semanticResults = await intelligentTextSearch(contextualQuery, query);
     }
 
@@ -63,12 +63,12 @@ async function queryrRAG(query) {
       if (bestResults.length > 0) {
         const topResult = bestResults[0];
         console.log(
-          `🏆 [RAG] Best match: "${
+          `[RAG] Best match: "${
             topResult?.metadata?.title || topResult?.title
           }" (relevance: ${topResult?.similarity?.toFixed(3) || "high"})`
         );
         console.log(
-          `📄 [RAG] Content preview: "${(topResult?.content || "").substring(
+          `[RAG] Content preview: "${(topResult?.content || "").substring(
             0,
             200
           )}..."`
@@ -81,7 +81,7 @@ async function queryrRAG(query) {
     console.log(`⚠️ [RAG] No relevant documents found for query: "${query}"`);
     return [];
   } catch (error) {
-    console.error("❌ [RAG] General error:", error.message);
+    console.error("[RAG] General error:", error.message);
     return [];
   }
 }
@@ -107,7 +107,7 @@ async function expandQueryWithAI(query) {
 
     return response.choices[0].message.content.trim();
   } catch (error) {
-    console.error("❌ [RAG] Error expanding query:", error.message);
+    console.error("[RAG] Error expanding query:", error.message);
     return query;
   }
 }
@@ -192,7 +192,7 @@ async function intelligentTextSearch(expandedQuery, originalQuery) {
     const importantTerms = terms.slice(0, 5); // Los primeros 5 términos más relevantes
 
     for (const term of importantTerms) {
-      console.log(`🔍 [RAG] Searching for term: "${term}"`);
+      console.log(`[RAG] Searching for term: "${term}"`);
 
       const { data, error } = await supabase
         .from("documents")
@@ -202,7 +202,7 @@ async function intelligentTextSearch(expandedQuery, originalQuery) {
 
       if (!error && data && data.length > 0) {
         allResults.push(...data);
-        console.log(`📄 [RAG] Found ${data.length} docs for "${term}"`);
+        console.log(`[RAG] Found ${data.length} docs for "${term}"`);
       }
     }
 
@@ -217,7 +217,7 @@ async function intelligentTextSearch(expandedQuery, originalQuery) {
     );
     return uniqueResults.slice(0, 10);
   } catch (error) {
-    console.error("❌ [RAG] Intelligent text search error:", error.message);
+    console.error("[RAG] Intelligent text search error:", error.message);
     return [];
   }
 }
@@ -255,10 +255,10 @@ ${doc.metadata?.country ? `País: ${doc.metadata.country}` : ""}
     });
 
     const selection = response.choices[0].message.content.trim();
-    console.log(`🤖 [RAG] AI selected articles: ${selection}`);
+    console.log(`[RAG] AI selected articles: ${selection}`);
 
     if (selection === "0") {
-      console.log(`⚠️ [RAG] AI found no relevant articles`);
+      console.log(`[RAG] AI found no relevant articles`);
       return [];
     }
 
@@ -269,12 +269,12 @@ ${doc.metadata?.country ? `País: ${doc.metadata.country}` : ""}
 
     const selectedResults = selectedIndices.map((index) => results[index]);
     console.log(
-      `✅ [RAG] AI selected ${selectedResults.length} relevant articles`
+      `[RAG] AI selected ${selectedResults.length} relevant articles`
     );
 
     return selectedResults;
   } catch (error) {
-    console.error("❌ [RAG] Error selecting best results:", error.message);
+    console.error("[RAG] Error selecting best results:", error.message);
     // Fallback: devolver los primeros 3 resultados
     return results.slice(0, 3);
   }
@@ -283,7 +283,7 @@ ${doc.metadata?.country ? `País: ${doc.metadata.country}` : ""}
 // Function para generar script con IA REAL + RAG
 async function generarScript(query, sessionId) {
   try {
-    console.log(`🤖 [${sessionId}] Starting generación con IA + RAG`);
+    console.log(`[${sessionId}] Starting generación con IA + RAG`);
 
     // PASO 1: Queryr RAG
     const documents = await queryrRAG(query);
@@ -295,7 +295,7 @@ async function generarScript(query, sessionId) {
     );
 
     if (documentsUnicos.length === 0) {
-      console.log(`❌ [${sessionId}] No hay documents en RAG`);
+      console.log(`[${sessionId}] No hay documents en RAG`);
       return {
         script: `Sorry, we don’t have news on ${query} at the moment. Stay tuned.`,
         encontrado: false,
@@ -319,29 +319,29 @@ CONTENIDO: ${doc.content}
     // PASO 3: ULTRA-STRICT English Prompt for 20-Second Videos
     const promptOptimizado = `You are a professional news presenter. Create a script of EXACTLY 65-70 words for 20-second videos with 2-second silence padding.
 
-⏱️ CRITICAL TIMING CONSTRAINT: MAXIMUM 16 seconds of speech (20 seconds total - 4 seconds silence)
-📏 WORD LIMIT: 65-70 words MAXIMUM (4.3 words per second average)
+CRITICAL TIMING CONSTRAINT: MAXIMUM 16 seconds of speech (20 seconds total - 4 seconds silence)
+WORD LIMIT: 65-70 words MAXIMUM (4.3 words per second average)
 
 CRITICAL: USE ONLY THE PROVIDED NEWS DATA BELOW. Topic: "${query}".
 
 MANDATORY STRUCTURE (65-70 words total):
-🎣 HOOK (0-3 seconds): 12-15 words
+HOOK (0-3 seconds): 12-15 words
 Fast impact opening with exclamation
 ✓ Main subject from database only
 ✓ HIGH-ENERGY words: BREAKING!, EXCLUSIVE!, URGENT!
 
-📰 CORE (3-13 seconds): 40-45 words  
+CORE (3-13 seconds): 40-45 words  
 ✓ Essential facts from database only
 ✓ Key details, numbers, locations from provided data
 ✓ NO speculation or added information
 ✓ Direct, concise reporting
 
-💬 CTA (13-16 seconds): 10-12 words
+CTA (13-16 seconds): 10-12 words
 ✓ Quick engagement question
 ✓ NO EMOJIS AT ALL - Text only
 ✓ Brief and punchy
 
-🔥 EXAMPLES (65-70 words each):
+EXAMPLES (65-70 words each):
 
 EXAMPLE 1 - Political (68 words):
 "BREAKING! President announces major immigration policy shift affecting millions nationwide. The administration revealed comprehensive reform including pathway to citizenship for undocumented workers and expanded visa programs. Congressional leaders expressed mixed reactions while advocacy groups celebrate the historic decision as breakthrough legislation. What's your take on this policy change?"
@@ -349,16 +349,16 @@ EXAMPLE 1 - Political (68 words):
 EXAMPLE 2 - International (67 words):
 "URGENT! Peace negotiations reach critical breakthrough in ongoing conflict zone today. Diplomatic sources confirm ceasefire agreement after six months of intensive talks between warring factions. International observers will monitor implementation while humanitarian aid reaches affected populations immediately through secured corridors. Will this bring lasting peace to the region?"
 
-⚠️ CRITICAL RULES - ZERO TOLERANCE:
+CRITICAL RULES - ZERO TOLERANCE:
 
-🕐 TIMING: EXACTLY 16 seconds speaking time (65-70 words)
-📊 COUNT: Manually verify word count before responding  
-📝 DATA: ONLY provided database information - NO additions
-🎯 FOCUS: Stick to requested topic "${query}" exclusively
-⚡ SPEED: 4.3 words per second maximum speaking rate
-🔒 STRUCTURE: Hook + Core + CTA - NO deviations
-❌ FORBIDDEN: Speculation, assumptions, external knowledge
-🚫 NO EMOJIS: Use only plain text - NO emojis anywhere
+TIMING: EXACTLY 16 seconds speaking time (65-70 words)
+COUNT: Manually verify word count before responding  
+DATA: ONLY provided database information - NO additions
+FOCUS: Stick to requested topic "${query}" exclusively
+SPEED: 4.3 words per second maximum speaking rate
+STRUCTURE: Hook + Core + CTA - NO deviations
+FORBIDDEN: Speculation, assumptions, external knowledge
+NO EMOJIS: Use only plain text - NO emojis anywhere
 
 AUDIO WILL HAVE: 2-second silence START + 16-second speech + 2-second silence END = 20 seconds total
 
@@ -384,7 +384,7 @@ RESPOND ONLY THE SCRIPT:`;
         {
           role: "user",
           content: `
-🎯 YOUR MISSION
+YOUR MISSION
 Turn verified news from the database only into a spoken script of EXACTLY 75 to 80 words for voiceover/Reels. If the database lacks info, use the fallback line. Never invent or assume details.
 
 🎙 TONE & STYLE
@@ -392,7 +392,7 @@ Turn verified news from the database only into a spoken script of EXACTLY 75 to 
 - Clear, responsible wording; no speculation or clickbait claims
 - Optional: ONE emoji if truly additive; no hashtags
 
-📋 REQUIRED STRUCTURE (75–80 words total)
+REQUIRED STRUCTURE (75–80 words total)
 1) HOOK (0–3s / 15–20 words)
    - High-impact openers: "BREAKING!", "DEVELOPING!", "MAJOR UPDATE!"
    - Name the main event/person/place; why it matters now
@@ -411,19 +411,19 @@ Turn verified news from the database only into a spoken script of EXACTLY 75 to 
      - "What happened? Join comments below."
      - "Should leaders act now? Discuss."
 
-📛 DO NOT
+DO NOT
 - Invent data, context, or timelines
 - Infer beyond database facts
 - Reuse past stories not in the database
 
-✅ IF NEWS EXISTS
+IF NEWS EXISTS
 Produce the script exactly as Hook + Core + CTA (one of each, no repeats).
 
-🚫 IF NO DATABASE INFO
+IF NO DATABASE INFO
 Respond exactly:
 "Sorry, we don’t have news on [topic] at the moment. Stay tuned."
 
-📌 CRITICAL RULES
+CRITICAL RULES
 - WORD COUNT: 75–80 words exactly
 - DURATION: Under 20 seconds
 - PRECISION: Database facts only
@@ -479,7 +479,7 @@ ${contextoRAG.substring(0, 3000)}
       })),
     };
   } catch (error) {
-    console.error(`❌ [${sessionId}] Error IA:`, error.message);
+    console.error(`[${sessionId}] Error IA:`, error.message);
 
     // Fallback to basic script in English
     return {

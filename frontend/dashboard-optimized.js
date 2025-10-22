@@ -219,7 +219,7 @@ function showCarouselError() {
           <div class="carousel-overlay"></div>
           <div class="carousel-content">
             <div class="carousel-loader">
-              <p>📰 Loading latest news...</p>
+              <p>Loading latest news...</p>
               <p style="font-size: 0.9rem; opacity: 0.8;">Connecting to news sources...</p>
             </div>
           </div>

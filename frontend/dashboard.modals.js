@@ -1,6 +1,6 @@
 // dashboard.modals.js
 (function () {
-  // 🔒 PRODUCTION LOGGING SYSTEM
+  // PRODUCTION LOGGING SYSTEM
   const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const logger = {
     log: (...args) => isDevelopment && logger.log(...args),
@@ -208,7 +208,7 @@
     const mainComparison = Q('imageComparison');
     
     if (!mainComparison || !cache.progressImageComparison) {
-      logger.log('⚠️ Main comparison or progress comparison not found');
+      logger.log('Main comparison or progress comparison not found');
       return;
     }
     
@@ -234,16 +234,16 @@
         // Show the progress comparison
         cache.progressImageComparison.style.display = 'block';
         
-        logger.log('✅ REAL images copied to progress modal:');
+        logger.log('REAL images copied to progress modal:');
         logger.log('   Original:', originalSrc);
         logger.log('   Transformed:', transformedSrc);
       } else {
-        logger.log('🔄 Main comparison still has default/empty images, keeping defaults in modal');
+        logger.log('Main comparison still has default/empty images, keeping defaults in modal');
         // Keep showing the comparison with default images
         cache.progressImageComparison.style.display = 'block';
       }
     } else {
-      logger.log('⚠️ Image elements not found, keeping defaults');
+      logger.log('Image elements not found, keeping defaults');
       // Keep showing the comparison with default images
       if (cache.progressImageComparison) {
         cache.progressImageComparison.style.display = 'block';
@@ -270,30 +270,30 @@
     // Show image comparison immediately with default images
     if (cache.progressImageComparison) {
       cache.progressImageComparison.style.display = 'block';
-      logger.log('✅ Progress image comparison shown initially');
+      logger.log('Progress image comparison shown initially');
       
       // Set default images if no images are loaded yet
       if (cache.progressOriginalImage && cache.progressTransformedImage) {
         // Use before.png and after.png as defaults
         cache.progressOriginalImage.src = '/images/before.png';
         cache.progressTransformedImage.src = '/images/after.png';
-        logger.log('📷 Default images loaded:');
-        logger.log('   Original: /images/before.png');
-        logger.log('   Transformed: /images/after.png');
+        logger.log('Default images loaded:');
+        logger.log(' Original: /images/before.png');
+        logger.log(' Transformed: /images/after.png');
         
         // Add error handlers to check if images load
         cache.progressOriginalImage.onerror = function() {
-          console.error('❌ Failed to load original default image');
+          console.error('Failed to load original default image');
         };
         cache.progressTransformedImage.onerror = function() {
-          console.error('❌ Failed to load transformed default image');
+          console.error('Failed to load transformed default image');
         };
         
         cache.progressOriginalImage.onload = function() {
-          logger.log('✅ Original default image loaded successfully');
+          logger.log('Original default image loaded successfully');
         };
         cache.progressTransformedImage.onload = function() {
-          logger.log('✅ Transformed default image loaded successfully');
+          logger.log('Transformed default image loaded successfully');
         };
       }
     }
@@ -367,7 +367,7 @@
       cache.progressVideo.load();
       cache.progressVideo.style.display = 'block';
       
-      addProgressLog("🎬 Video preview ready - Playing in loop...");
+      addProgressLog("Video preview ready - Playing in loop...");
     }
 
     // Update video info
@@ -392,13 +392,13 @@
     setTimeout(() => {
       if (cache.progressVideo && cache.progressVideo.play) {
         cache.progressVideo.play().catch(()=>{});
-        addProgressLog("▶️ Video preview started (silent loop)");
+        addProgressLog("Video preview started (silent loop)");
         
         // DON'T show success message here - it will be shown when subtitled video arrives
         // Just update progress and show close button after delay
         setTimeout(() => {
-          addProgressLog("✅ Video generated! Processing subtitles...");
-          addProgressLog("⏳ Waiting for subtitled version...");
+          addProgressLog("Video generated! Processing subtitles...");
+          addProgressLog("Waiting for subtitled version...");
           
           // Show close button but DON'T show success message yet
           if (cache.progressCloseBtn) {
@@ -419,8 +419,8 @@
     
     // Update to final step
     updateProgressStep(5);
-    addProgressLog("🎉 Subtitled video ready!");
-    addProgressLog("✅ PROCESS COMPLETE - Both videos generated");
+    addProgressLog("Subtitled video ready!");
+    addProgressLog("PROCESS COMPLETE - Both videos generated");
     
     // Show success message after short delay
     setTimeout(() => {
@@ -431,7 +431,7 @@
   function showSuccessMessage() {
     // Prevent multiple success messages
     if (document.getElementById('videoSuccessOverlay')) {
-      logger.log('🚫 Success message already showing, preventing duplicate');
+      logger.log('Success message already showing, preventing duplicate');
       return;
     }
     
@@ -451,7 +451,7 @@
           <div class="confetti"></div>
         </div>
         <button class="success-close-btn" onclick="window.Modals.hideSuccessMessage()">
-          ✨ Awesome! Generate Another
+          Awesome! Generate Another
         </button>
       </div>
     `;

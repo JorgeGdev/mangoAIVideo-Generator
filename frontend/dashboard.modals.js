@@ -1,5 +1,14 @@
 // dashboard.modals.js
 (function () {
+  // 🔒 PRODUCTION LOGGING SYSTEM
+  const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const logger = {
+    log: (...args) => isDevelopment && logger.log(...args),
+    warn: (...args) => isDevelopment && console.warn(...args),
+    error: (...args) => console.error(...args), // Errores siempre se muestran
+    info: (...args) => isDevelopment && console.info(...args)
+  };
+
   // Utilidad: consulta segura (si no existe, devuelve null)
   const Q = (sel) => document.getElementById(sel);
 
@@ -199,7 +208,7 @@
     const mainComparison = Q('imageComparison');
     
     if (!mainComparison || !cache.progressImageComparison) {
-      console.log('⚠️ Main comparison or progress comparison not found');
+      logger.log('⚠️ Main comparison or progress comparison not found');
       return;
     }
     
@@ -225,16 +234,16 @@
         // Show the progress comparison
         cache.progressImageComparison.style.display = 'block';
         
-        console.log('✅ REAL images copied to progress modal:');
-        console.log('   Original:', originalSrc);
-        console.log('   Transformed:', transformedSrc);
+        logger.log('✅ REAL images copied to progress modal:');
+        logger.log('   Original:', originalSrc);
+        logger.log('   Transformed:', transformedSrc);
       } else {
-        console.log('🔄 Main comparison still has default/empty images, keeping defaults in modal');
+        logger.log('🔄 Main comparison still has default/empty images, keeping defaults in modal');
         // Keep showing the comparison with default images
         cache.progressImageComparison.style.display = 'block';
       }
     } else {
-      console.log('⚠️ Image elements not found, keeping defaults');
+      logger.log('⚠️ Image elements not found, keeping defaults');
       // Keep showing the comparison with default images
       if (cache.progressImageComparison) {
         cache.progressImageComparison.style.display = 'block';
@@ -261,16 +270,16 @@
     // Show image comparison immediately with default images
     if (cache.progressImageComparison) {
       cache.progressImageComparison.style.display = 'block';
-      console.log('✅ Progress image comparison shown initially');
+      logger.log('✅ Progress image comparison shown initially');
       
       // Set default images if no images are loaded yet
       if (cache.progressOriginalImage && cache.progressTransformedImage) {
         // Use before.png and after.png as defaults
         cache.progressOriginalImage.src = '/images/before.png';
         cache.progressTransformedImage.src = '/images/after.png';
-        console.log('📷 Default images loaded:');
-        console.log('   Original: /images/before.png');
-        console.log('   Transformed: /images/after.png');
+        logger.log('📷 Default images loaded:');
+        logger.log('   Original: /images/before.png');
+        logger.log('   Transformed: /images/after.png');
         
         // Add error handlers to check if images load
         cache.progressOriginalImage.onerror = function() {
@@ -281,10 +290,10 @@
         };
         
         cache.progressOriginalImage.onload = function() {
-          console.log('✅ Original default image loaded successfully');
+          logger.log('✅ Original default image loaded successfully');
         };
         cache.progressTransformedImage.onload = function() {
-          console.log('✅ Transformed default image loaded successfully');
+          logger.log('✅ Transformed default image loaded successfully');
         };
       }
     }
@@ -422,7 +431,7 @@
   function showSuccessMessage() {
     // Prevent multiple success messages
     if (document.getElementById('videoSuccessOverlay')) {
-      console.log('🚫 Success message already showing, preventing duplicate');
+      logger.log('🚫 Success message already showing, preventing duplicate');
       return;
     }
     
@@ -592,7 +601,7 @@
       cache.progressVideo.currentTime = 0;
       cache.progressVideo.src = '';
       cache.progressVideo.load(); // Force reload to clear everything
-      console.log('🔇 Video completely stopped and cleared');
+      logger.log('🔇 Video completely stopped and cleared');
     }
     
     // IMPORTANT: Now reset everything for new generation AFTER success message disappears
@@ -625,7 +634,7 @@
       window.currentSessionId = null;
     }
     
-    console.log('✨ Everything reset for new generation');
+    logger.log('✨ Everything reset for new generation');
   }
 
   function hideProgressDialog() {
@@ -637,7 +646,7 @@
         cache.progressVideo.currentTime = 0;
         cache.progressVideo.src = '';
         cache.progressVideo.load();
-        console.log('Video stopped when closing modal');
+        logger.log('Video stopped when closing modal');
       }
       safeClose(cache.progress);
     }
@@ -680,5 +689,5 @@
     hideSuccessMessage,
     resetForNewGeneration
   };
-  console.log('[modals] ready');
+  logger.log('[modals] ready');
 })();

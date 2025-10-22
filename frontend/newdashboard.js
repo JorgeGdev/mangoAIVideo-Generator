@@ -3,7 +3,16 @@
 // Funcionalidades adicionales para el dashboard
 // ============================================================================
 
-console.log('📱 NewDashboard script loaded');
+// 🔒 PRODUCTION LOGGING SYSTEM
+const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const logger = {
+  log: (...args) => isDevelopment && logger.log(...args),
+  warn: (...args) => isDevelopment && console.warn(...args),
+  error: (...args) => console.error(...args), // Errores siempre se muestran
+  info: (...args) => isDevelopment && console.info(...args)
+};
+
+logger.log('📱 NewDashboard script loaded');
 
 // ============================================================================
 // FILE UPLOAD FUNCTIONALITY
@@ -17,17 +26,17 @@ function setupPhotoUpload() {
   const uploadText = document.getElementById('uploadText');
 
   if (!photoUpload || !uploadZone || !previewImage || !uploadText) {
-    console.log('⚠️ Upload elements not found');
+    logger.log('⚠️ Upload elements not found');
     return;
   }
 
-  console.log('✅ Setting up photo upload functionality');
+  logger.log('✅ Setting up photo upload functionality');
 
   // File input change handler
   photoUpload.addEventListener('change', function(event) {
     const file = event.target.files[0];
     if (file) {
-      console.log(`📁 File selected from input: ${file.name}`);
+      logger.log(`📁 File selected from input: ${file.name}`);
       handleFileSelect(file);
     }
   });
@@ -72,7 +81,7 @@ function setupPhotoUpload() {
       return;
     }
     
-    console.log('🖱️ Upload zone clicked, opening file dialog');
+    logger.log('🖱️ Upload zone clicked, opening file dialog');
     photoUpload.click();
   });
 
@@ -84,11 +93,11 @@ function setupPhotoUpload() {
 
     // Evitar procesar el mismo archivo múltiples veces
     if (uploadZone.classList.contains('has-file') && uploadText.textContent === file.name) {
-      console.log(`⚠️ File ${file.name} already processed, skipping`);
+      logger.log(`⚠️ File ${file.name} already processed, skipping`);
       return;
     }
 
-    console.log(`📁 File selected: ${file.name} (${file.type}, ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+    logger.log(`📁 File selected: ${file.name} (${file.type}, ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -118,7 +127,7 @@ function setupPhotoUpload() {
       if (uploadIcon) uploadIcon.style.display = 'none';
       if (uploadHint) uploadHint.style.display = 'none';
       
-      console.log(`✅ Image uploaded successfully: ${file.name}`);
+      logger.log(`✅ Image uploaded successfully: ${file.name}`);
     };
     reader.readAsDataURL(file);
 
@@ -127,7 +136,7 @@ function setupPhotoUpload() {
       const dt = new DataTransfer();
       dt.items.add(file);
       photoUpload.files = dt.files;
-      console.log(`🔄 Updated photoUpload.files with: ${file.name}`);
+      logger.log(`🔄 Updated photoUpload.files with: ${file.name}`);
     }
   }
 
@@ -144,13 +153,13 @@ function setupPhotoUpload() {
     if (uploadIcon) uploadIcon.style.display = 'block';
     if (uploadHint) uploadHint.style.display = 'block';
     
-    console.log('🗑️ Upload zone reset');
+    logger.log('🗑️ Upload zone reset');
   }
 
   // Expose reset function globally for form reset
   window.resetPhotoUpload = resetUploadZone;
 
-  console.log('🎯 Photo upload functionality initialized');
+  logger.log('🎯 Photo upload functionality initialized');
 }
 
 // ============================================================================
@@ -164,7 +173,7 @@ function setupFormValidation() {
   const voiceSelect = document.getElementById('voiceSelect');
 
   if (!generateBtn || !photoUpload || !consultaInput || !voiceSelect) {
-    console.log('⚠️ Form elements not found for validation');
+    logger.log('⚠️ Form elements not found for validation');
     return;
   }
 
@@ -195,7 +204,7 @@ function setupFormValidation() {
   // Initial validation
   validateForm();
 
-  console.log('✅ Form validation setup complete');
+  logger.log('✅ Form validation setup complete');
 }
 
 // ============================================================================
@@ -204,7 +213,7 @@ function setupFormValidation() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 NewDashboard initializing...');
+  logger.log('🚀 NewDashboard initializing...');
   
   // Setup upload functionality
   setTimeout(() => {
@@ -216,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupFormValidation();
   }, 200);
   
-  console.log('✅ NewDashboard initialized');
+  logger.log('✅ NewDashboard initialized');
 });
 
-console.log('✅ NewDashboard script ready');
+logger.log('✅ NewDashboard script ready');

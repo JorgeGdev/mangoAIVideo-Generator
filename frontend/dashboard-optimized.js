@@ -2,15 +2,24 @@
 // DASHBOARD OPTIMIZED - SINGLE INITIALIZATION
 // ============================================
 
+// 🔒 PRODUCTION LOGGING SYSTEM
+const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const logger = {
+  log: (...args) => isDevelopment && logger.log(...args),
+  warn: (...args) => isDevelopment && console.warn(...args),
+  error: (...args) => console.error(...args), // Errores siempre se muestran
+  info: (...args) => isDevelopment && console.info(...args)
+};
+
 let eventSource = null;
 let currentSessionId = null;
 let isInitialized = false;
 
 // Prevent multiple initializations
 if (isInitialized) {
-  console.log('Dashboard already initialized');
+  logger.log('Dashboard already initialized');
 } else {
-  console.log('🚀 Initializing Dashboard...');
+  logger.log('🚀 Initializing Dashboard...');
   isInitialized = true;
 }
 
@@ -30,7 +39,7 @@ let carouselState = {
 // ============================================================================
 async function fetchCarouselNews() {
   try {
-    console.log("📰 [Carousel] Fetching news...");
+    logger.log("[Carousel] Fetching news...");
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
@@ -49,7 +58,7 @@ async function fetchCarouselNews() {
     
     if (result.success && result.news.length > 0) {
       carouselState.news = result.news;
-      console.log(`✅ [Carousel] Loaded ${result.news.length} news items`);
+      logger.log(`✅ [Carousel] Loaded ${result.news.length} news items`);
       initializeCarousel();
     } else {
       console.error("❌ [Carousel] No news available");
@@ -69,7 +78,7 @@ function initializeCarousel() {
   const dotsContainer = document.getElementById("carouselDots");
 
   if (!slidesContainer || !dotsContainer) {
-    console.log("⚠️ [Carousel] Elements not found");
+    logger.log("⚠️ [Carousel] Elements not found");
     return;
   }
 
@@ -266,7 +275,7 @@ function conectarLogs() {
     if (data.type === 'script_approval') {
       // guarda session para aprobar/rechazar rápido con los botones inline (si los usas)
       currentSessionId = data.sessionId;
-      console.log('[SSE] script_approval', data);
+      logger.log('[SSE] script_approval', data);
 
       if (window.Modals && typeof window.Modals.showApprovalDialog === 'function') {
         window.Modals.showApprovalDialog(data.sessionId, data.script, data.query);
@@ -278,20 +287,20 @@ function conectarLogs() {
 
     // 3) COMPARACIÓN DE IMAGEN: mostrar bloque
     if (data.type === 'image_comparison') {
-      console.log('[SSE] image_comparison', data);
+      logger.log('[SSE] image_comparison', data);
       mostrarComparacionImagenes(data.originalPath, data.transformedPath);
       return;
     }
 
     // 4) VIDEO COMPLETADO: abrir diálogo
     if (data.type === 'video_completion') {
-      console.log('🎬 Video completion received:', data);
-      console.log('🎬 isSubtitled:', data.isSubtitled);
-      console.log('🎬 Modal system available:', !!window.Modals);
+      logger.log('🎬 Video completion received:', data);
+      logger.log('🎬 isSubtitled:', data.isSubtitled);
+      logger.log('🎬 Modal system available:', !!window.Modals);
       
       // Check if this is the subtitled version (FINAL step)
       if (data.isSubtitled) {
-        console.log('� SUBTITLED VIDEO ARRIVED - Showing success message!');
+        logger.log('� SUBTITLED VIDEO ARRIVED - Showing success message!');
         
         // Update to final step and show success message
         if (window.Modals && window.Modals.showSubtitledVideoComplete) {
@@ -305,7 +314,7 @@ function conectarLogs() {
         }
       } else {
         // This is the normal video (first one) - just show it, no success message yet
-        console.log('📹 Normal video arrived - waiting for subtitled version...');
+        logger.log('📹 Normal video arrived - waiting for subtitled version...');
         
         // Update to step 4 (creating video complete, but not final yet)
         if (window.Modals && window.Modals.updateProgressStep) {
@@ -315,7 +324,7 @@ function conectarLogs() {
         // Show the video in modal
         setTimeout(() => {
           if (window.Modals && typeof window.Modals.showVideoDialog === 'function') {
-            console.log('🎬 Opening video modal...');
+            logger.log('🎬 Opening video modal...');
             window.Modals.showVideoDialog(data);
           } else {
             console.error('❌ Modal system not available');
@@ -329,7 +338,7 @@ function conectarLogs() {
   };
 
   eventSource.onerror = function() {
-    console.log('Log connection error');
+    logger.log('Log connection error');
   };
 }
 
@@ -345,9 +354,9 @@ function mostrarComparacionImagenes(originalPath, transformedPath) {
     return;
   }
   
-  console.log('📷 Setting image comparison:');
-  console.log('   Original:', originalPath);
-  console.log('   Transformed:', transformedPath);
+  logger.log('📷 Setting image comparison:');
+  logger.log('   Original:', originalPath);
+  logger.log('   Transformed:', transformedPath);
   
   originalImg.src = originalPath || '';
   transformedImg.src = transformedPath || '';
@@ -355,7 +364,7 @@ function mostrarComparacionImagenes(originalPath, transformedPath) {
   
   // Force update progress modal image comparison if it's open
   if (window.Modals && window.Modals.forceUpdateImageComparison) {
-    console.log('🔄 Updating progress modal image comparison...');
+    logger.log('🔄 Updating progress modal image comparison...');
     window.Modals.forceUpdateImageComparison();
   }
 }
@@ -384,7 +393,7 @@ async function actualizarEstadisticas() {
     updateStatElement('successRate', stats.exito || '0%');
     
   } catch (error) {
-    console.log('Stats update error:', error.message);
+    logger.log('Stats update error:', error.message);
   }
 }
 
@@ -407,7 +416,7 @@ async function verificarAuth() {
       window.location.href = '/login.html';
     }
   } catch (error) {
-    console.log('Auth check error');
+    logger.log('Auth check error');
   }
 }
 
@@ -431,7 +440,7 @@ async function ejecutarScraper() {
     const result = await response.json();
     
     if (result.success) {
-      console.log('✅ Scraper started');
+      logger.log('✅ Scraper started');
     }
   } catch (error) {
     console.error('❌ Scraper error:', error);
@@ -535,7 +544,7 @@ async function generarVideoManual() {
 
     if (result.success) {
       currentSessionId = result.sessionId;
-      console.log("✅ Video generation started");
+      logger.log("✅ Video generation started");
     } else {
       alert("Error: " + result.message);
     }
@@ -565,7 +574,7 @@ async function aprobarScript() {
     const result = await response.json();
 
     if (result.success) {
-      console.log("✅ Script approved");
+      logger.log("✅ Script approved");
     } else {
       alert("Error: " + result.message);
     }
@@ -588,7 +597,7 @@ async function rechazarScript() {
     const result = await response.json();
 
     if (result.success) {
-      console.log("✅ Script rejected");
+      logger.log("✅ Script rejected");
       currentSessionId = null;
     }
   } catch (error) {
@@ -615,7 +624,7 @@ async function limpiarLogs() {
 // Clear carousel cache and refresh news
 async function limpiarCacheCarousel() {
   try {
-    console.log('🔄 Clearing carousel cache and fetching fresh news...');
+    logger.log('🔄 Clearing carousel cache and fetching fresh news...');
     
     // Clear cache on server
     await fetch('/api/news/clear-cache', { method: 'POST' });
@@ -623,7 +632,7 @@ async function limpiarCacheCarousel() {
     // Fetch fresh news
     await fetchCarouselNews();
     
-    console.log('✅ Carousel refreshed with improved filters');
+    logger.log('✅ Carousel refreshed with improved filters');
   } catch (error) {
     console.error('❌ Carousel refresh error:', error);
   }
@@ -708,7 +717,7 @@ async function logout() {
 // ============================================================================
 async function loadShowcaseVideos() {
   try {
-    console.log('📹 [Showcase] Loading videos (original + subtitled)...');
+    logger.log('📹 [Showcase] Loading videos (original + subtitled)...');
     
     const response = await fetch('/api/videos/combined');
     const result = await response.json();
@@ -720,9 +729,9 @@ async function loadShowcaseVideos() {
       
       displayShowcaseVideos(randomVideos);
       
-      console.log(`✅ [Showcase] Loaded ${result.stats?.total || result.videos.length} total videos (${result.stats?.original || 0} original, ${result.stats?.subtitled || 0} subtitled)`);
+      logger.log(`✅ [Showcase] Loaded ${result.stats?.total || result.videos.length} total videos (${result.stats?.original || 0} original, ${result.stats?.subtitled || 0} subtitled)`);
     } else {
-      console.log('⚠️ [Showcase] No videos found, showing placeholder');
+      logger.log('⚠️ [Showcase] No videos found, showing placeholder');
       showShowcasePlaceholder();
     }
   } catch (error) {
@@ -761,7 +770,7 @@ function displayShowcaseVideos(videos) {
     showcaseGrid.appendChild(videoCard);
   });
   
-  console.log(`✅ [Showcase] Displayed ${videos.length} videos`);
+  logger.log(`✅ [Showcase] Displayed ${videos.length} videos`);
 }
 
 function showShowcasePlaceholder() {
@@ -787,7 +796,7 @@ function showShowcasePlaceholder() {
 
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 Dashboard loading...');
+  logger.log('🚀 Dashboard loading...');
   
   // Initialize core functions
   verificarAuth();
@@ -805,7 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarEstadisticas();
   }, 10000);
   
-  console.log('✅ Dashboard ready');
+  logger.log('✅ Dashboard ready');
 });
 
 // Cleanup on page unload

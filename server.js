@@ -255,7 +255,7 @@ app.post("/api/scraper/start", requireAuth, (req, res) => {
       .toString()
       .split("\n")
       .filter((line) => line.trim());
-    lines.forEach((line) => broadcastLog(`📰 ${line}`));
+    lines.forEach((line) => broadcastLog(`${line}`));
   });
 
   scraperProcess.stderr.on("data", (data) => {
@@ -656,7 +656,7 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       "💡 El sistema esperará 3 minutes y luego verificará 8 veces (total ~7 min)"
     );
     broadcastLog(
-      '📊 Si Hedra está lento, el sistema intentará descargar "a la mala"'
+      '📊 Si Hedra está lento, el sistema intentará descargar manualmente'
     );
 
     // PASO 3: Crear video final
@@ -961,7 +961,7 @@ app.get("/api/news/carousel", async (req, res) => {
       now - carouselNewsCache.lastUpdate < carouselNewsCache.CACHE_DURATION
     ) {
       console.log(
-        `📰 [Carousel] Returning cached news (age: ${Math.floor(
+        `[Carousel] Returning cached news (age: ${Math.floor(
           (now - carouselNewsCache.lastUpdate) / 1000 / 60
         )} minutes)`
       );
@@ -977,7 +977,7 @@ app.get("/api/news/carousel", async (req, res) => {
 
     // Cache expirado o vacío - buscar noticias nuevas
     console.log(
-      `📰 [Carousel] Cache expired/empty - fetching fresh news from RAG`
+      `[Carousel] Cache expired/empty - fetching fresh news from RAG`
     );
 
     const { createClient } = require("@supabase/supabase-js");
@@ -1079,7 +1079,7 @@ app.get("/api/news/carousel", async (req, res) => {
             },
           ];
 
-          console.log(`📰 [Carousel] Using demo news for ${countryCode}`);
+          console.log(`[Carousel] Using demo news for ${countryCode}`);
         }
 
         // FILTRAR chunks incompletos + VALIDAR que correspondan al país correcto
@@ -1185,7 +1185,7 @@ app.get("/api/news/carousel", async (req, res) => {
           const actualSource = metadata.source || "Unknown";
           const actualLink = metadata.link || "No link";
           console.log(
-            `📰 [Carousel] Adding ${countryCode} news: "${
+            `[Carousel] Adding ${countryCode} news: "${
               metadata.title || "No title"
             }" from ${actualSource} (${actualLink})`
           );
@@ -1693,7 +1693,7 @@ function runScraper(source = 'manual') {
   scraperProcess.stdout.on("data", (data) => {
     const message = data.toString().trim();
     console.log(`[SCRAPER] ${message}`);
-    broadcastLog(`📰 ${message}`);
+    broadcastLog(`${message}`);
   });
 
   scraperProcess.stderr.on("data", (data) => {

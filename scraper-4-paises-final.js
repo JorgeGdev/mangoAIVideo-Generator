@@ -1,4 +1,16 @@
 require('dotenv').config();
+
+// Polyfill para Node.js en Railway
+if (typeof globalThis.File === 'undefined') {
+  globalThis.File = class File {
+    constructor(chunks, filename, options = {}) {
+      this.chunks = chunks;
+      this.name = filename;
+      this.type = options.type || '';
+    }
+  };
+}
+
 const Parser = require('rss-parser');
 const axios = require('axios');
 const cheerio = require('cheerio');

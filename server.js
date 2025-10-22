@@ -12,9 +12,10 @@ const fs = require("fs");
 const {
   requireAuth,
   requireAdmin,
-  validarCredenciales,
-  crearUser,
-  listarUsers,
+  validateCredentials,  // 🔧 NOMBRE CORRECTO EN INGLÉS
+  createUser,           // 🔧 NOMBRE CORRECTO EN INGLÉS  
+  listUsers,            // 🔧 NOMBRE CORRECTO EN INGLÉS
+  verifyToken,          // 🔧 NOMBRE CORRECTO: verifyToken
 } = require("./modules/auth-manager"); // NUEVO
 
 const app = express();
@@ -104,7 +105,7 @@ app.post("/api/auth/login", async (req, res) => {
       });
     }
 
-    const result = await validarCredenciales(username, password);
+    const result = await validateCredentials(username, password);
 
     if (result.success) {
       // Establecer cookie con el token
@@ -140,7 +141,7 @@ app.post("/api/auth/logout", (req, res) => {
 // Ruta para listar users (solo admin)
 app.get("/api/auth/users", requireAuth, requireAdmin, async (req, res) => {
   try {
-    const result = await listarUsers();
+    const result = await listUsers();
     res.json(result);
   } catch (error) {
     res.json({ success: false, message: "Error cargando users" });
@@ -165,7 +166,7 @@ app.post(
         });
       }
 
-      const result = await crearUser(username, password, name, email, role); // AGREGAMOS EMAIL
+      const result = await createUser(username, password, name, email, role); // AGREGAMOS EMAIL
 
       if (result.success) {
         broadcastLog(
@@ -1597,9 +1598,8 @@ app.get("/", (req, res) => {
     return res.redirect("/login.html");
   }
 
-  // Verificar token
-  const { verificarToken } = require("./modules/auth-manager");
-  const verification = verificarToken(token);
+  // Verificar token (ya importado arriba)
+  const verification = verifyToken(token);
 
   if (!verification.success) {
     // Invalid token, redirigir a login

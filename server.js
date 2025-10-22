@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cookieParser = require("cookie-parser"); // NUEVO
 const multer = require("multer"); // NUEVO para uploads
+const chokidar = require("chokidar"); // NUEVO para watch de archivos
 const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
@@ -62,6 +63,8 @@ app.use(
   express.static(path.join(process.cwd(), "images", "modified"))
 );
 app.use("/frontend", express.static(path.join(process.cwd(), "frontend")));
+// Serve subtitled videos
+app.use("/final_videos_subtitled", express.static(path.join(process.cwd(), "final_videos_subtitled")));
 app.use(express.static("."));
 
 // Voices endpoint (fills the <select id="voiceSelect"> in the dashboard)
@@ -1375,6 +1378,120 @@ app.get("/api/videos/random", (req, res) => {
   }
 });
 
+// NEW: Endpoints for subtitled videos
+// Endpoint para obtener videos con subtítulos
+app.get("/api/videos/subtitled", (req, res) => {
+  try {
+    const { getSubtitledVideos } = require('./modules/subtitle-processor');
+    
+    getSubtitledVideos()
+      .then(videos => {
+        console.log(`[Subtitled Videos API] Found ${videos.length} subtitled videos`);
+        
+        res.json({
+          success: true,
+          videos,
+          total: videos.length,
+        });
+      })
+      .catch(error => {
+        console.error("❌ [Subtitled Videos API] Error:", error);
+        res.json({
+          success: false,
+          message: "Error loading subtitled videos",
+          videos: [],
+        });
+      });
+  } catch (error) {
+    console.error("❌ [Subtitled Videos API] Error:", error);
+    res.json({
+      success: false,
+      message: "Error loading subtitled videos",
+      videos: [],
+    });
+  }
+});
+
+// Endpoint combinado que devuelve videos originales y con subtítulos
+app.get("/api/videos/combined", (req, res) => {
+  try {
+    const videosDir = path.join(__dirname, "final_videos");
+    const { getSubtitledVideos } = require('./modules/subtitle-processor');
+
+    // Videos originales
+    let originalVideos = [];
+    if (fs.existsSync(videosDir)) {
+      originalVideos = fs
+        .readdirSync(videosDir)
+        .filter((file) => file.toLowerCase().endsWith(".mp4"))
+        .map((file) => {
+          const filePath = path.join(videosDir, file);
+          const stats = fs.statSync(filePath);
+          return {
+            filename: file,
+            path: `/final_videos/${file}`,
+            size: Math.round(stats.size / (1024 * 1024)),
+            date: stats.mtime.toISOString(),
+            created: stats.birthtime,
+            title: file
+              .replace(".mp4", "")
+              .replace(/video_(\d{8})_(\d{6})/, "Video $1 $2"),
+            isSubtitled: false,
+            type: 'original'
+          };
+        });
+    }
+
+    // Videos con subtítulos
+    getSubtitledVideos()
+      .then(subtitledVideos => {
+        // Agregar tipo para diferenciar
+        const typedSubtitledVideos = subtitledVideos.map(video => ({
+          ...video,
+          type: 'subtitled'
+        }));
+
+        // Combinar y ordenar por fecha
+        const allVideos = [...originalVideos, ...typedSubtitledVideos]
+          .sort((a, b) => new Date(b.created || b.date) - new Date(a.created || a.date));
+
+        console.log(`🎥 [Combined Videos API] Found ${originalVideos.length} original + ${subtitledVideos.length} subtitled videos`);
+
+        res.json({
+          success: true,
+          videos: allVideos,
+          stats: {
+            total: allVideos.length,
+            original: originalVideos.length,
+            subtitled: subtitledVideos.length
+          }
+        });
+      })
+      .catch(error => {
+        console.error("❌ [Combined Videos API] Error with subtitled videos:", error);
+        
+        // Si falla subtítulos, devolver solo originales
+        res.json({
+          success: true,
+          videos: originalVideos,
+          stats: {
+            total: originalVideos.length,
+            original: originalVideos.length,
+            subtitled: 0
+          },
+          warning: "Could not load subtitled videos"
+        });
+      });
+  } catch (error) {
+    console.error("❌ [Combined Videos API] Error:", error);
+    res.json({
+      success: false,
+      message: "Error loading videos",
+      videos: [],
+    });
+  }
+});
+
 // Endpoint para limpiar logs
 app.post("/api/logs/clear", requireAuth, (req, res) => {
   broadcastLog("🗑️ Logs limpiados");
@@ -1392,6 +1509,78 @@ app.post("/api/news/clear-cache", requireAuth, (req, res) => {
     "🗑️ Cache del carousel limpiado - próxima carga usará filtros mejorados"
   );
   res.json({ success: true, message: "Carousel cache cleared" });
+});
+
+// ============================================================================
+// TEST ENDPOINTS - Para probar el modal de progreso
+// ============================================================================
+app.post("/api/test/simulate-video", requireAuth, async (req, res) => {
+  try {
+    const { action, videoName } = req.body;
+    
+    if (action === 'simulate_arrival') {
+      const timestamp = new Date().toISOString().replace(/[:\-T]/g, '').substring(0, 15);
+      const newVideoName = videoName || `test_video_${timestamp}.mp4`;
+      
+      // Simular la llegada de un video copiando uno existente
+      const sourceVideo = path.join(__dirname, 'final_videos', 'demo1.mp4');
+      const destinationVideo = path.join(__dirname, 'final_videos', newVideoName);
+      
+      if (fs.existsSync(sourceVideo)) {
+        fs.copyFileSync(sourceVideo, destinationVideo);
+        
+        broadcastLog(`🧪 Test: Video simulado creado - ${newVideoName}`);
+        
+        // Simular el evento de video completado
+        setTimeout(() => {
+          const videoStats = fs.statSync(destinationVideo);
+          const videoData = {
+            type: 'video_completion',
+            videoPath: `/final_videos/${newVideoName}`,
+            videoName: newVideoName,
+            videoSize: videoStats.size,
+            size: `${(videoStats.size / (1024 * 1024)).toFixed(2)} MB`,
+            sessionId: 'test_session_' + timestamp
+          };
+          
+          // Enviar evento SSE
+          clients.forEach(client => {
+            try {
+              client.write(`data: ${JSON.stringify(videoData)}\n\n`);
+              console.log('✅ Video completion event sent to client');
+            } catch (e) {
+              console.log('Error enviando test event:', e.message);
+            }
+          });
+          
+          broadcastLog(`🎬 Test: Evento video_completion enviado para ${newVideoName}`);
+          console.log('📹 Video data sent:', videoData);
+        }, 1000);
+        
+        res.json({ 
+          success: true, 
+          message: 'Video simulation started',
+          videoName: newVideoName 
+        });
+      } else {
+        res.json({ 
+          success: false, 
+          message: 'Source video not found' 
+        });
+      }
+    } else {
+      res.json({ 
+        success: false, 
+        message: 'Unknown action' 
+      });
+    }
+  } catch (error) {
+    console.error('Error in simulate-video:', error);
+    res.json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
 });
 
 // Servir página de login
@@ -1456,7 +1645,132 @@ app.listen(PORT, () => {
   broadcastLog("🌐 Servidor Express initialized");
   broadcastLog("📋 Dashboard web disponible");
   broadcastLog("⚡ System ready to use");
+  
+  // Iniciar watcher de videos
+  setupVideoWatcher();
+  
+  // Iniciar scraper automático cada 4 horas
+  setupAutoScraper();
 });
+
+// ============================================================================
+// AUTO SCRAPER - Ejecutar cada 4 horas automáticamente
+// ============================================================================
+function setupAutoScraper() {
+  console.log('🤖 Setting up automatic scraper (every 4 hours)...');
+  
+  // Ejecutar inmediatamente al iniciar (opcional)
+  setTimeout(() => {
+    runScraper('auto_startup');
+  }, 30000); // 30 segundos después del inicio
+  
+  // Configurar intervalo cada 4 horas (4 * 60 * 60 * 1000 = 14400000 ms)
+  const FOUR_HOURS = 4 * 60 * 60 * 1000;
+  
+  setInterval(() => {
+    runScraper('auto_scheduled');
+  }, FOUR_HOURS);
+  
+  console.log('✅ Auto scraper scheduled - will run every 4 hours');
+  broadcastLog('🤖 Auto scraper configurado - cada 4 horas');
+}
+
+function runScraper(source = 'manual') {
+  // Verificar si ya hay un scraper ejecutándose
+  if (scraperProcess) {
+    console.log('⚠️ Scraper already running, skipping...');
+    return;
+  }
+  
+  const timestamp = new Date().toLocaleString();
+  console.log(`🚀 [${timestamp}] Starting auto scraper (${source})...`);
+  broadcastLog(`🚀 Auto scraper iniciado (${source})`);
+  
+  scraperProcess = spawn("node", ["scraper-4-paises-final.js"], {
+    stdio: "pipe",
+  });
+
+  scraperProcess.stdout.on("data", (data) => {
+    const message = data.toString().trim();
+    console.log(`[SCRAPER] ${message}`);
+    broadcastLog(`📰 ${message}`);
+  });
+
+  scraperProcess.stderr.on("data", (data) => {
+    console.error(`[SCRAPER ERROR] ${data}`);
+  });
+
+  scraperProcess.on("close", (code) => {
+    const timestamp = new Date().toLocaleString();
+    if (code === 0) {
+      console.log(`✅ [${timestamp}] Auto scraper completed successfully`);
+      broadcastLog("✅ Auto scraper completado exitosamente");
+    } else {
+      console.log(`❌ [${timestamp}] Auto scraper failed with code: ${code}`);
+      broadcastLog(`❌ Auto scraper falló con código: ${code}`);
+    }
+    scraperProcess = null;
+  });
+}
+
+// ============================================================================
+// FILE WATCHER - Detectar videos nuevos automáticamente
+// ============================================================================
+function setupVideoWatcher() {
+  const finalVideosPath = path.join(__dirname, 'final_videos');
+  const subtitledVideosPath = path.join(__dirname, 'final_videos_subtitled');
+  
+  console.log('📁 Setting up video file watcher...');
+  
+  // Watcher para final_videos
+  const watcher = chokidar.watch([finalVideosPath, subtitledVideosPath], {
+    ignored: /^\./, 
+    persistent: true,
+    ignoreInitial: true // Solo nuevos archivos, no los existentes
+  });
+  
+  watcher.on('add', (filePath) => {
+    if (path.extname(filePath).toLowerCase() === '.mp4') {
+      const videoName = path.basename(filePath);
+      const videoStats = fs.statSync(filePath);
+      const isSubtitled = filePath.includes('final_videos_subtitled');
+      
+      console.log(`🎬 New video detected: ${videoName} (${isSubtitled ? 'subtitled' : 'normal'})`);
+      
+      // Generar evento de video completado
+      setTimeout(() => {
+        const videoData = {
+          type: 'video_completion',
+          videoPath: isSubtitled ? `/final_videos_subtitled/${videoName}` : `/final_videos/${videoName}`,
+          videoName: videoName,
+          videoSize: videoStats.size,
+          size: `${(videoStats.size / (1024 * 1024)).toFixed(2)} MB`,
+          sessionId: 'auto_detected_' + Date.now(),
+          isSubtitled: isSubtitled
+        };
+        
+        // Enviar evento SSE a todos los clientes
+        clients.forEach(client => {
+          try {
+            client.write(`data: ${JSON.stringify(videoData)}\n\n`);
+          } catch (e) {
+            console.log('Error sending auto-detected video event:', e.message);
+          }
+        });
+        
+        broadcastLog(`🎬 Auto-detected video: ${videoName} - Event sent to clients`);
+        console.log('📹 Auto-detected video data:', videoData);
+      }, 500); // Small delay to ensure file is fully written
+    }
+  });
+  
+  watcher.on('error', (error) => {
+    console.error('📁 File watcher error:', error);
+  });
+  
+  console.log('✅ Video file watcher active');
+  return watcher;
+}
 
 // Manejo de cierre del servidor
 process.on("SIGINT", () => {

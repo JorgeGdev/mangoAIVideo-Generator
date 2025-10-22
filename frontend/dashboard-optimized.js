@@ -286,24 +286,43 @@ function conectarLogs() {
     // 4) VIDEO COMPLETADO: abrir diálogo
     if (data.type === 'video_completion') {
       console.log('🎬 Video completion received:', data);
+      console.log('🎬 isSubtitled:', data.isSubtitled);
       console.log('🎬 Modal system available:', !!window.Modals);
-      console.log('🎬 showVideoDialog available:', !!(window.Modals && window.Modals.showVideoDialog));
       
-      // Update to final step
-      if (window.Modals && window.Modals.updateProgressStep) {
-        window.Modals.updateProgressStep(5); // Complete
-      }
-
-      // Small delay to show completion, then show video modal
-      setTimeout(() => {
-        if (window.Modals && typeof window.Modals.showVideoDialog === 'function') {
-          console.log('🎬 Opening video modal...');
-          window.Modals.showVideoDialog(data);
-        } else {
-          console.error('❌ Modal system not available');
-          alert('Video generated: ' + (data.videoPath || '(no path)'));
+      // Check if this is the subtitled version (FINAL step)
+      if (data.isSubtitled) {
+        console.log('� SUBTITLED VIDEO ARRIVED - Showing success message!');
+        
+        // Update to final step and show success message
+        if (window.Modals && window.Modals.showSubtitledVideoComplete) {
+          window.Modals.showSubtitledVideoComplete();
         }
-      }, 1000);
+        
+        // Also show the video in the modal
+        if (window.Modals && window.Modals.showProgressVideo) {
+          window.Modals.showProgressVideo(data);
+          window.Modals.addProgressLog(`📹 Subtitled video: ${data.videoName}`);
+        }
+      } else {
+        // This is the normal video (first one) - just show it, no success message yet
+        console.log('📹 Normal video arrived - waiting for subtitled version...');
+        
+        // Update to step 4 (creating video complete, but not final yet)
+        if (window.Modals && window.Modals.updateProgressStep) {
+          window.Modals.updateProgressStep(4);
+        }
+
+        // Show the video in modal
+        setTimeout(() => {
+          if (window.Modals && typeof window.Modals.showVideoDialog === 'function') {
+            console.log('🎬 Opening video modal...');
+            window.Modals.showVideoDialog(data);
+          } else {
+            console.error('❌ Modal system not available');
+            alert('Video generated: ' + (data.videoPath || '(no path)'));
+          }
+        }, 1000);
+      }
       
       return;
     }
@@ -325,9 +344,20 @@ function mostrarComparacionImagenes(originalPath, transformedPath) {
     console.warn('[image] contenedor/ids de comparación no encontrados');
     return;
   }
+  
+  console.log('📷 Setting image comparison:');
+  console.log('   Original:', originalPath);
+  console.log('   Transformed:', transformedPath);
+  
   originalImg.src = originalPath || '';
   transformedImg.src = transformedPath || '';
   block.style.display = 'block';
+  
+  // Force update progress modal image comparison if it's open
+  if (window.Modals && window.Modals.forceUpdateImageComparison) {
+    console.log('🔄 Updating progress modal image comparison...');
+    window.Modals.forceUpdateImageComparison();
+  }
 }
 
 
@@ -678,13 +708,19 @@ async function logout() {
 // ============================================================================
 async function loadShowcaseVideos() {
   try {
-    console.log('📹 [Showcase] Loading random videos...');
+    console.log('📹 [Showcase] Loading videos (original + subtitled)...');
     
-    const response = await fetch('/api/videos/random');
+    const response = await fetch('/api/videos/combined');
     const result = await response.json();
     
     if (result.success && result.videos.length > 0) {
-      displayShowcaseVideos(result.videos);
+      // Shuffle and select 4 random videos
+      const shuffled = result.videos.sort(() => 0.5 - Math.random());
+      const randomVideos = shuffled.slice(0, 4);
+      
+      displayShowcaseVideos(randomVideos);
+      
+      console.log(`✅ [Showcase] Loaded ${result.stats?.total || result.videos.length} total videos (${result.stats?.original || 0} original, ${result.stats?.subtitled || 0} subtitled)`);
     } else {
       console.log('⚠️ [Showcase] No videos found, showing placeholder');
       showShowcasePlaceholder();
@@ -705,6 +741,10 @@ function displayShowcaseVideos(videos) {
     const videoCard = document.createElement('div');
     videoCard.className = 'showcase-card';
     
+    // Add badge for subtitled videos
+    const subtitleBadge = video.isSubtitled || video.type === 'subtitled' ? 
+      '<div class="subtitle-badge">Subtitled</div>' : '';
+    
     videoCard.innerHTML = `
       <video 
         src="${video.path}" 
@@ -715,6 +755,7 @@ function displayShowcaseVideos(videos) {
         onloadedmetadata="this.currentTime=0"
         ontimeupdate="if(this.currentTime>=5){this.currentTime=0}"
       ></video>
+      ${subtitleBadge}
     `;
     
     showcaseGrid.appendChild(videoCard);

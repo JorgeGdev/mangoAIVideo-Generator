@@ -14,5 +14,13 @@
     "email": "nz.jorge2156@gmail.com",
     "created": "2025-07-24",
     "active": true
+  },
+  "Diana": {
+    "password": "$2b$10$tEQNi62WmvQIBPGvub15i./eFtrI5VdMAXnV4xi960e/K69PJDzoq",
+    "role": "admin",
+    "name": "Diana Alba",
+    "email": "diliao44@hotmail.com",
+    "created": "2025-10-22",
+    "active": true
   }
 }

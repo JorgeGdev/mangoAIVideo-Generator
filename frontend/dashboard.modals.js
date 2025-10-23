@@ -225,11 +225,9 @@
         // Show the progress comparison
         cache.progressImageComparison.style.display = 'block';
         
-        console.log('✅ REAL images copied to progress modal:');
-        console.log('   Original:', originalSrc);
-        console.log('   Transformed:', transformedSrc);
+        
       } else {
-        console.log('🔄 Main comparison still has default/empty images, keeping defaults in modal');
+        
         // Keep showing the comparison with default images
         cache.progressImageComparison.style.display = 'block';
       }
@@ -261,17 +259,14 @@
     // Show image comparison immediately with default images
     if (cache.progressImageComparison) {
       cache.progressImageComparison.style.display = 'block';
-      console.log('✅ Progress image comparison shown initially');
+      
       
       // Set default images if no images are loaded yet
       if (cache.progressOriginalImage && cache.progressTransformedImage) {
         // Use before.png and after.png as defaults
         cache.progressOriginalImage.src = '/images/before.png';
         cache.progressTransformedImage.src = '/images/after.png';
-        console.log('📷 Default images loaded:');
-        console.log('   Original: /images/before.png');
-        console.log('   Transformed: /images/after.png');
-        
+                
         // Add error handlers to check if images load
         cache.progressOriginalImage.onerror = function() {
           console.error('❌ Failed to load original default image');
@@ -281,10 +276,10 @@
         };
         
         cache.progressOriginalImage.onload = function() {
-          console.log('✅ Original default image loaded successfully');
+          
         };
         cache.progressTransformedImage.onload = function() {
-          console.log('✅ Transformed default image loaded successfully');
+          
         };
       }
     }
@@ -385,11 +380,26 @@
         cache.progressVideo.play().catch(()=>{});
         addProgressLog("▶️ Video preview started (silent loop)");
         
+        // Make video clickeable for download
+        cache.progressVideo.style.cursor = 'pointer';
+        cache.progressVideo.title = `Click to download ${videoData.videoName || 'video'}`;
+        
+        // Add click handler for download
+        cache.progressVideo.onclick = () => {
+          const isSubtitled = videoData.isSubtitled || false;
+          const videoName = videoData.videoName || videoData.name;
+          
+          if (videoName) {
+            downloadVideo(videoData.videoPath, videoName, isSubtitled);
+          }
+        };
+        
         // DON'T show success message here - it will be shown when subtitled video arrives
         // Just update progress and show close button after delay
         setTimeout(() => {
           addProgressLog("✅ Video generated! Processing subtitles...");
           addProgressLog("⏳ Waiting for subtitled version...");
+          addProgressLog("👆 Click video preview to download");
           
           // Show close button but DON'T show success message yet
           if (cache.progressCloseBtn) {
@@ -663,7 +673,42 @@
     });
   }
 
-
+  // ============================================================================
+  // ROBUST VIDEO DOWNLOAD FUNCTIONALITY  
+  // ============================================================================
+  
+  async function downloadVideo(videoPath, videoName, isSubtitled = false) {
+    try {
+      console.log(`📥 Starting download: ${videoName} (subtitled: ${isSubtitled})`);
+      
+      // Determine video type and filename
+      const videoType = isSubtitled ? 'subtitled' : 'normal';
+      const filename = videoName || 'video.mp4';
+      
+      // Create download link using robust endpoint
+      const downloadUrl = `/api/video/download/${videoType}/${filename}`;
+      
+      // Trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log(`🎉 Download initiated: ${filename}`);
+      addProgressLog(`📥 Downloading ${filename}...`);
+      
+      return true;
+      
+    } catch (error) {
+      console.error(`❌ Download failed: ${error.message}`);
+      alert(`Download failed: ${error.message}`);
+      return false;
+    }
+  }
 
   // Exponer API (aunque falten nodos, no fallamos)
   window.Modals = { 
@@ -678,7 +723,8 @@
     forceUpdateImageComparison,
     showSuccessMessage,
     hideSuccessMessage,
-    resetForNewGeneration
+    resetForNewGeneration,
+    downloadVideo
   };
-  console.log('[modals] ready');
+  
 })();

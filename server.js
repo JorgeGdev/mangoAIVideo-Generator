@@ -86,8 +86,27 @@ app.use(
   express.static(path.join(process.cwd(), "images", "modified"))
 );
 app.use("/frontend", express.static(path.join(process.cwd(), "frontend")));
-// Serve subtitled videos
-app.use("/final_videos_subtitled", express.static(path.join(process.cwd(), "final_videos_subtitled")));
+
+// Serve videos with proper range support for streaming
+app.use("/final_videos", express.static(path.join(process.cwd(), "final_videos"), {
+  setHeaders: (res, filePath) => {
+    if (path.extname(filePath) === '.mp4') {
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Content-Type', 'video/mp4');
+    }
+  }
+}));
+
+// Serve subtitled videos with proper range support
+app.use("/final_videos_subtitled", express.static(path.join(process.cwd(), "final_videos_subtitled"), {
+  setHeaders: (res, filePath) => {
+    if (path.extname(filePath) === '.mp4') {
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Content-Type', 'video/mp4');
+    }
+  }
+}));
+
 app.use(express.static("."));
 
 // Voices endpoint (fills the <select id="voiceSelect"> in the dashboard)
@@ -773,6 +792,53 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       broadcastLog(
         `⚠️ Error enviando evento (no crítico): ${eventError.message}`
       );
+    }
+
+    // ============================================================================
+    // PROCESAMIENTO AUTOMÁTICO DE SUBTÍTULOS
+    // ============================================================================
+    try {
+      broadcastLog("🎵 Iniciando procesamiento automático de subtítulos...");
+      
+      const { processVideoSubtitles } = require('./modules/subtitle-processor');
+      const videoPath = path.join(__dirname, "final_videos", videoFinal.nameArchivo);
+      
+      // Verificar que el video original existe
+      if (fs.existsSync(videoPath)) {
+        broadcastLog(`🎬 Procesando subtítulos para: ${videoFinal.nameArchivo}`);
+        
+        // Procesar subtítulos en background (no bloquear respuesta)
+        processVideoSubtitles(videoPath, sessionId)
+          .then((subtitleResult) => {
+            broadcastLog(`✅ SUBTÍTULOS COMPLETADOS: ${subtitleResult.outputPath}`);
+            
+            // Enviar evento de video subtitulado completado
+            const subtitledVideoName = path.basename(subtitleResult.outputPath);
+            const subtitledVideoPath = `/final_videos_subtitled/${subtitledVideoName}`;
+            
+            broadcastEvent({
+              type: 'video_completion',
+              videoPath: subtitledVideoPath,
+              videoName: subtitledVideoName,
+              videoSize: subtitleResult.fileSize || 0,
+              sessionId: sessionId + '_subtitled',
+              isSubtitled: true,
+              originalVideo: videoFinal.nameArchivo,
+              timestamp: Date.now()
+            });
+            
+            broadcastLog(`📹 Video con subtítulos listo: ${subtitledVideoName}`);
+            broadcastLog(`🎯 Ambas versiones disponibles (original + subtítulos)`);
+          })
+          .catch((subtitleError) => {
+            broadcastLog(`⚠️ Error en subtítulos (no crítico): ${subtitleError.message}`);
+            broadcastLog(`✅ Video original sigue disponible sin subtítulos`);
+          });
+      } else {
+        broadcastLog(`⚠️ Video original no encontrado para subtítulos: ${videoPath}`);
+      }
+    } catch (subtitleSetupError) {
+      broadcastLog(`⚠️ Error configurando subtítulos: ${subtitleSetupError.message}`);
     }
 
     // ============================================================================
@@ -1538,6 +1604,114 @@ app.post("/api/news/clear-cache", requireAuth, (req, res) => {
     "🗑️ Cache del carousel limpiado - próxima carga usará filtros mejorados"
   );
   res.json({ success: true, message: "Carousel cache cleared" });
+});
+
+// ============================================================================
+// VIDEO DOWNLOAD ENDPOINTS - Manejo robusto de descarga de videos
+// ============================================================================
+
+// Endpoint para descargar videos con manejo correcto de rangos
+app.get('/api/video/download/:type/:filename', (req, res) => {
+  try {
+    const { type, filename } = req.params;
+    
+    let videoDir;
+    if (type === 'subtitled') {
+      videoDir = path.join(__dirname, 'final_videos_subtitled');
+    } else if (type === 'normal') {
+      videoDir = path.join(__dirname, 'final_videos');
+    } else {
+      return res.status(400).json({ error: 'Invalid video type' });
+    }
+    
+    const videoPath = path.join(videoDir, filename);
+    
+    // Verificar que el archivo existe
+    if (!fs.existsSync(videoPath)) {
+      console.log(`❌ Video not found: ${videoPath}`);
+      return res.status(404).json({ error: 'Video not found' });
+    }
+    
+    const stat = fs.statSync(videoPath);
+    const fileSize = stat.size;
+    const range = req.headers.range;
+    
+    if (range) {
+      // Parse range header
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      
+      if (start >= fileSize) {
+        res.status(416).send('Range not satisfiable\n' + start + ' >= ' + fileSize);
+        return;
+      }
+      
+      const chunksize = (end - start) + 1;
+      const file = fs.createReadStream(videoPath, { start, end });
+      const head = {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': 'video/mp4',
+      };
+      
+      res.writeHead(206, head);
+      file.pipe(res);
+    } else {
+      // No range, send entire file
+      const head = {
+        'Content-Length': fileSize,
+        'Content-Type': 'video/mp4',
+        'Accept-Ranges': 'bytes',
+        'Content-Disposition': `attachment; filename="${filename}"`
+      };
+      
+      res.writeHead(200, head);
+      fs.createReadStream(videoPath).pipe(res);
+    }
+    
+    console.log(`📥 Video download: ${filename} (${type})`);
+    
+  } catch (error) {
+    console.error(`❌ Video download error: ${error.message}`);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Endpoint para verificar si un video existe
+app.get('/api/video/exists/:type/:filename', (req, res) => {
+  try {
+    const { type, filename } = req.params;
+    
+    let videoDir;
+    if (type === 'subtitled') {
+      videoDir = path.join(__dirname, 'final_videos_subtitled');
+    } else if (type === 'normal') {
+      videoDir = path.join(__dirname, 'final_videos');
+    } else {
+      return res.status(400).json({ error: 'Invalid video type' });
+    }
+    
+    const videoPath = path.join(videoDir, filename);
+    const exists = fs.existsSync(videoPath);
+    
+    if (exists) {
+      const stat = fs.statSync(videoPath);
+      res.json({
+        exists: true,
+        size: stat.size,
+        sizeFormatted: `${(stat.size / (1024 * 1024)).toFixed(2)} MB`,
+        modified: stat.mtime
+      });
+    } else {
+      res.json({ exists: false });
+    }
+    
+  } catch (error) {
+    console.error(`❌ Video exists check error: ${error.message}`);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // ============================================================================

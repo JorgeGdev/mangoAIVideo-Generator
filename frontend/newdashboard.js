@@ -27,7 +27,7 @@ function setupPhotoUpload() {
   photoUpload.addEventListener('change', function(event) {
     const file = event.target.files[0];
     if (file) {
-      console.log(`📁 File selected from input: ${file.name}`);
+      
       handleFileSelect(file);
     }
   });
@@ -72,7 +72,7 @@ function setupPhotoUpload() {
       return;
     }
     
-    console.log('🖱️ Upload zone clicked, opening file dialog');
+    
     photoUpload.click();
   });
 
@@ -118,7 +118,7 @@ function setupPhotoUpload() {
       if (uploadIcon) uploadIcon.style.display = 'none';
       if (uploadHint) uploadHint.style.display = 'none';
       
-      console.log(`✅ Image uploaded successfully: ${file.name}`);
+      
     };
     reader.readAsDataURL(file);
 

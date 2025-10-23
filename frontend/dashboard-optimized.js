@@ -49,7 +49,7 @@ async function fetchCarouselNews() {
     
     if (result.success && result.news.length > 0) {
       carouselState.news = result.news;
-      console.log(`✅ [Carousel] Loaded ${result.news.length} news items`);
+      
       initializeCarousel();
     } else {
       console.error("❌ [Carousel] No news available");
@@ -266,7 +266,7 @@ function conectarLogs() {
     if (data.type === 'script_approval') {
       // guarda session para aprobar/rechazar rápido con los botones inline (si los usas)
       currentSessionId = data.sessionId;
-      console.log('[SSE] script_approval', data);
+      
 
       if (window.Modals && typeof window.Modals.showApprovalDialog === 'function') {
         window.Modals.showApprovalDialog(data.sessionId, data.script, data.query);
@@ -535,7 +535,7 @@ async function generarVideoManual() {
 
     if (result.success) {
       currentSessionId = result.sessionId;
-      console.log("✅ Video generation started");
+      
     } else {
       alert("Error: " + result.message);
     }

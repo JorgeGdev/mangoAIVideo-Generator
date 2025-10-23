@@ -8,24 +8,54 @@ pnpm-lock.yaml
 
 # Env files
 .env
-.env.*
+.env.local
+.env.*.local
+!.env.example
 
 # Logs
 logs/
 *.log
 
-# Generated
-final_videos/
-generated_audios/
-uploads/
-images/modified/
+# Generated content (Railway will create these)
+final_videos/*.mp4
+final_videos_subtitled/*.mp4
+generated_audios/*.wav
+generated_audios/*.mp3
+images/modified/*.jpg
+images/modified/*.png
+uploads/*.jpg
+uploads/*.png
+uploads/*.mp4
+tmp_subtitles/*.srt
+tmp_subtitles/*.ass
+
+# Keep directories but not content
+!final_videos/.gitkeep
+!final_videos_subtitled/.gitkeep
+!generated_audios/.gitkeep
+!images/modified/.gitkeep
+!uploads/.gitkeep
+!tmp_subtitles/.gitkeep
 
 # OS
 .DS_Store
 Thumbs.db
 
-# VSCode
+# VSCode & Cursor
 .vscode/
+.cursor/
 
 # Mac
 Icon?
+
+# Testing files
+test-*.js
+simulate-*.js
+testing/
+
+# Railway specific
+.railway/
+
+# Backup files
+*.bak
+*.backup

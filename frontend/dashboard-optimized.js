@@ -10,7 +10,7 @@ let isInitialized = false;
 if (isInitialized) {
   console.log('Dashboard already initialized');
 } else {
-  console.log('🚀 Initializing Dashboard...');
+  
   isInitialized = true;
 }
 
@@ -30,7 +30,7 @@ let carouselState = {
 // ============================================================================
 async function fetchCarouselNews() {
   try {
-    console.log("📰 [Carousel] Fetching news...");
+    
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
@@ -49,7 +49,7 @@ async function fetchCarouselNews() {
     
     if (result.success && result.news.length > 0) {
       carouselState.news = result.news;
-      console.log(`✅ [Carousel] Loaded ${result.news.length} news items`);
+      
       initializeCarousel();
     } else {
       console.error("❌ [Carousel] No news available");
@@ -266,7 +266,7 @@ function conectarLogs() {
     if (data.type === 'script_approval') {
       // guarda session para aprobar/rechazar rápido con los botones inline (si los usas)
       currentSessionId = data.sessionId;
-      console.log('[SSE] script_approval', data);
+      
 
       if (window.Modals && typeof window.Modals.showApprovalDialog === 'function') {
         window.Modals.showApprovalDialog(data.sessionId, data.script, data.query);
@@ -542,7 +542,7 @@ async function generarVideoManual() {
 
     if (result.success) {
       currentSessionId = result.sessionId;
-      console.log("✅ Video generation started");
+      
     } else {
       alert("Error: " + result.message);
     }
@@ -729,7 +729,7 @@ async function loadShowcaseVideos() {
       
       console.log(`✅ [Showcase] Loaded ${result.stats?.total || result.videos.length} total videos (${result.stats?.original || 0} original, ${result.stats?.subtitled || 0} subtitled)`);
     } else {
-      console.log('⚠️ [Showcase] No videos found, showing placeholder');
+      
       showShowcasePlaceholder();
     }
   } catch (error) {
@@ -794,7 +794,7 @@ function showShowcasePlaceholder() {
 
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 Dashboard loading...');
+  
   
   // Initialize core functions
   verificarAuth();
@@ -812,7 +812,7 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarEstadisticas();
   }, 10000);
   
-  console.log('✅ Dashboard ready');
+  
 });
 
 // Cleanup on page unload

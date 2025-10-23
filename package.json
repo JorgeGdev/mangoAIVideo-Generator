@@ -1,23 +1,27 @@
 {
-  "name": "football-video-generator",
+  "name": "mango-ai-video-generator",
   "version": "1.0.0",
-  "description": "Sistema automático de generación de videos deportivos con IA",
+  "description": "Sistema automático de generación de videos con IA - Railway Ready",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
+    "dev": "nodemon server.js",
     "bot": "node main.js",
     "scraper": "node scraper-4-paises-final.js",
     "railway:start": "NODE_ENV=production node server.js"
   },
   "keywords": [
-    "football",
-    "video",
     "ai",
+    "video",
+    "generator",
     "telegram",
-    "sports"
+    "news",
+    "railway",
+    "hedra",
+    "elevenlabs",
+    "openai"
   ],
-  "author": "Tu Nombre",
+  "author": "JorgeGdev",
   "license": "MIT",
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
@@ -45,5 +49,10 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "railway": {
+    "build": {
+      "command": "npm run railway:setup"
+    }
   }
 }

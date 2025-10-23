@@ -1,11 +1,14 @@
 // modules/video-creator.js
 // -------- VIDEO PIPELINE (Hedra) --------
-// Keeps your API surface and log style. Adds robust guards and extraction of IDs/URLs.
+// Railway compatible version with temporary storage
 // Exports: procesarVideoCompleto, sincronizarAssets, crearVideo, verificarStatusVideo, descargarVideo
 
 const axios = require("axios");
 const fs = require("fs").promises;
 const path = require("path");
+
+// RAILWAY STORAGE INTEGRATION
+const { STORAGE_CONFIG, isRailway } = require('./railway-storage');
 
 // ====== ENV ======
 const HEDRA_API_KEY = process.env.HEDRA_API_KEY;
@@ -221,7 +224,8 @@ async function descargarVideo(videoUrl, sessionId) {
     const hora = now.toTimeString().slice(0, 8).replace(/:/g, "");
     const nameVideo = `video_${fecha}_${hora}.mp4`;
 
-    const videoDir = "final_videos";
+    // RAILWAY COMPATIBLE: Use storage config
+    const videoDir = STORAGE_CONFIG.videos;
     await fs.mkdir(videoDir, { recursive: true });
     const videoPath = path.join(videoDir, nameVideo);
 
@@ -235,6 +239,36 @@ async function descargarVideo(videoUrl, sessionId) {
       `✅ Video saved: ${videoPath} (${videoSize} MB)`
     );
     await logAndNotify(sessionId, `🔍 File verified: ${stats.size} bytes`);
+    
+    if (isRailway) {
+      await logAndNotify(sessionId, "🚂 Railway: Video stored in temporary location");
+      await logAndNotify(sessionId, "💾 Auto-download will be triggered after completion");
+    }
+
+    // 🎵 NUEVO: Generar automáticamente subtítulos
+    let subtitledVideoInfo = null;
+    try {
+      await logAndNotify(sessionId, "🎵 Starting automatic subtitle generation...");
+      
+      // Importar el procesador de subtítulos
+      const { processVideoSubtitles } = require('./subtitle-processor');
+      
+      // Procesar subtítulos de manera no bloqueante
+      subtitledVideoInfo = await processVideoSubtitles(videoPath, sessionId);
+      
+      await logAndNotify(
+        sessionId,
+        `✅ Subtitled video created: ${subtitledVideoInfo.subtitledVideoName} (${subtitledVideoInfo.size})`
+      );
+      
+    } catch (subtitleError) {
+      await logAndNotify(
+        sessionId,
+        `⚠️ Warning: Could not generate subtitles: ${subtitleError.message}`
+      );
+      // No fallar todo el proceso por un error de subtítulos
+      console.error(`[${sessionId}] Subtitle error (non-fatal):`, subtitleError);
+    }
 
     return {
       archivo: videoPath,
@@ -242,6 +276,7 @@ async function descargarVideo(videoUrl, sessionId) {
       tamaño: `${videoSize} MB`,
       buffer: Buffer.from(response.data),
       url: videoUrl,
+      subtitles: subtitledVideoInfo // Información de subtítulos si se generaron
     };
   } catch (error) {
     await logAndNotify(

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - User Management</title>
+  <link rel="stylesheet" href="/frontend/leonardo-style.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .admin-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .admin-header h1 {
+      color: white;
+      margin: 0;
+      font-size: 1.8rem;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .btn-back {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group select {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 0.6rem;
+      color: white;
+      font-size: 0.95rem;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: rgba(102, 126, 234, 0.5);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .users-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .users-table th {
+      background: rgba(102, 126, 234, 0.2);
+      color: rgba(255, 255, 255, 0.9);
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .users-table td {
+      padding: 1rem;
+      color: rgba(255, 255, 255, 0.8);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .users-table tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .badge-admin {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+    }
+
+    .badge-user {
+      background: rgba(102, 126, 234, 0.3);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .badge-active {
+      background: rgba(34, 197, 94, 0.3);
+      color: #22c55e;
+    }
+
+    .badge-inactive {
+      background: rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    .message {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .message.success {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #22c55e;
+    }
+
+    .message.error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    .loading {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body class="leonardo-theme">
+  <div class="admin-container">
+    <!-- Header -->
+    <div class="admin-header">
+      <h1>👨‍💼 Admin Panel - User Management</h1>
+      <button class="btn-back" onclick="window.location.href='/'">
+        Back to Dashboard
+      </button>
+    </div>
+
+    <!-- Message Area -->
+    <div id="messageArea" class="message"></div>
+
+    <!-- Create User Section -->
+    <div class="section">
+      <h2 class="section-title">➕ Create New User</h2>
+      <form id="createUserForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Username *</label>
+            <input type="text" id="username" required placeholder="john_doe">
+          </div>
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" id="name" required placeholder="John Doe">
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="email" required placeholder="john@example.com">
+          </div>
+          <div class="form-group">
+            <label>Password *</label>
+            <input type="password" id="password" required placeholder="Min 6 characters">
+          </div>
+          <div class="form-group">
+            <label>Role *</label>
+            <select id="role" required>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Create User</button>
+      </form>
+    </div>
+
+    <!-- Users List Section -->
+    <div class="section">
+      <h2 class="section-title">👥 Existing Users</h2>
+      <div id="usersTableContainer">
+        <div class="loading">Loading users...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load users on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadUsers();
+    });
+
+    // Create user form handler
+    document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value.trim();
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+
+      if (password.length < 6) {
+        showMessage('Password must be at least 6 characters', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/create-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ username, name, email, password, role })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showMessage(`✅ User "${username}" created successfully!`, 'success');
+          document.getElementById('createUserForm').reset();
+          loadUsers(); // Reload users list
+        } else {
+          showMessage(`❌ Error: ${result.message}`, 'error');
+        }
+      } catch (error) {
+        showMessage(`❌ Error creating user: ${error.message}`, 'error');
+      }
+    });
+
+    // Load users list
+    async function loadUsers() {
+      const container = document.getElementById('usersTableContainer');
+      container.innerHTML = '<div class="loading">Loading users...</div>';
+
+      try {
+        const response = await fetch('/api/auth/users', {
+          credentials: 'include'
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.users) {
+          const users = Object.entries(result.users).map(([username, data]) => ({
+            username,
+            ...data
+          }));
+
+          if (users.length === 0) {
+            container.innerHTML = '<div class="loading">No users found</div>';
+            return;
+          }
+
+          const tableHTML = `
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Created</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${users.map(user => `
+                  <tr>
+                    <td><strong>${user.username}</strong></td>
+                    <td>${user.name || '-'}</td>
+                    <td>${user.email || '-'}</td>
+                    <td>
+                      <span class="badge ${user.role === 'admin' ? 'badge-admin' : 'badge-user'}">
+                        ${user.role === 'admin' ? '👑 Admin' : '👤 User'}
+                      </span>
+                    </td>
+                    <td>${user.created || '-'}</td>
+                    <td>
+                      <span class="badge ${user.active !== false ? 'badge-active' : 'badge-inactive'}">
+                        ${user.active !== false ? '✅ Active' : '❌ Inactive'}
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+
+          container.innerHTML = tableHTML;
+        } else {
+          container.innerHTML = '<div class="loading">Error loading users</div>';
+        }
+      } catch (error) {
+        container.innerHTML = `<div class="loading">Error: ${error.message}</div>`;
+      }
+    }
+
+    // Show message helper
+    function showMessage(text, type) {
+      const messageArea = document.getElementById('messageArea');
+      messageArea.textContent = text;
+      messageArea.className = `message ${type}`;
+      messageArea.style.display = 'block';
+
+      setTimeout(() => {
+        messageArea.style.display = 'none';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

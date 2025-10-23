@@ -216,9 +216,9 @@ SET & BACKGROUND:
 - Subtle bokeh newsroom OR cozy studio OR minimalist tech set. Brand-neutral, no text/logos.
 
 WARDROBE (change clothing ONLY; pick ONE per generation, unisex, elegant):
-1) Dark tailored blazer + fine-knit turtleneck (charcoal/navy).
-2) Open-collar shirt (white/light blue) + textured blazer (grey).
-3) Minimalist top (ivory/cream) + camel blazer + simple watch.
+1) Open-collar shirt (white/light blue) + textured blazer (grey/black/navy).
+2) Minimalist top (ivory/cream) + camel blazer + simple watch.
+3) Dark tailored blazer + fine-knit turtleneck (charcoal/dark green).
 4) Monochrome suit (mid-grey) + black crew-neck knit + discreet lapel mic.
 5) Powder-blue shirt + navy V-neck sweater + midnight blazer.
 6) Black satin-lapel blazer + ivory silk/satin top.

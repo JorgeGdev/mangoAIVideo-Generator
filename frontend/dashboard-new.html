@@ -117,14 +117,14 @@
           <div class="hero-visual">
             <div class="hero-card hero-card-1">
               <img
-                src="images/modified/influencer_1760829988513.jpg"
+                src="images/host1.png"
                 alt="AI Generated Host"
                 onerror="this.style.display='none'"
               />
             </div>
             <div class="hero-card hero-card-2">
               <img
-                src="images/modified/test-gemini-result-1760684586856.jpg"
+                src="images/host2.png"
                 alt="AI Transformed"
                 onerror="this.style.display='none'"
               />
@@ -720,47 +720,21 @@ Script will appear here...</pre
     </dialog>
 
     <!-- Scripts Optimized -->
+    <script src="/frontend/railway-download-handler.js"></script>
     <script src="/frontend/dashboard.modals.js"></script>
     <script src="/frontend/dashboard-optimized.js"></script>
     <script src="/frontend/newdashboard.js"></script>
     <link rel="stylesheet" href="/frontend/modals.leonardo.css" />
     <script src="/frontend/leonardo-behavior-optimized.js"></script>
 
-    <!-- Hero Images Dynamic Loading -->
+    <!-- Hero Images Static - Always use host1.png and host2.png -->
     <script>
-      // Load hero images dynamically from /images/modified
-      async function loadHeroImages() {
-        try {
-          const response = await fetch("/api/images/available");
-          const result = await response.json();
+      console.log("✅ Hero images set to static: images/host1.png and images/host2.png");
+    </script>
 
-          if (result.success && result.images.length > 0) {
-            // Filter only images from modified folder
-            const modifiedImages = result.images.filter((img) =>
-              img.includes("/modified/")
-            );
-
-            if (modifiedImages.length >= 2) {
-              // Update hero images
-              const heroImg1 = document.querySelector(".hero-card-1 img");
-              const heroImg2 = document.querySelector(".hero-card-2 img");
-
-              if (heroImg1) heroImg1.src = modifiedImages[0];
-              if (heroImg2) heroImg2.src = modifiedImages[1];
-
-              console.log(
-                "✅ Hero images loaded from:",
-                modifiedImages.slice(0, 2)
-              );
-            }
-          }
-        } catch (error) {
-          console.log("⚠️ Could not load dynamic hero images, using defaults");
-        }
-      }
-
-      // Load when page is ready
-      document.addEventListener("DOMContentLoaded", loadHeroImages);
+    <!-- Test Modal Functions (Simplified) -->
+    <script>
+      console.log('✅ Modal system ready');
     </script>
 
 

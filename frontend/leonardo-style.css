@@ -855,6 +855,23 @@
   border-radius: var(--radius-lg);
 }
 
+/* Subtitle badge for videos */
+.subtitle-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, #8B5CF6, #A855F7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
 /* Skeleton Loading */
 .skeleton {
   pointer-events: none;

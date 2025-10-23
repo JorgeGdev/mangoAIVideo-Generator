@@ -3,9 +3,44 @@ require("dotenv").config();
 const express = require("express");
 const cookieParser = require("cookie-parser"); // NUEVO
 const multer = require("multer"); // NUEVO para uploads
+const chokidar = require("chokidar"); // NUEVO para watch de archivos
+const cron = require("node-cron"); // Para RAG automático
 const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
+
+// RAILWAY STORAGE MANAGER - Para manejo de archivos temporales
+const { 
+  STORAGE_CONFIG, 
+  isRailway, 
+  registerTempFile, 
+  markAsDownloaded,
+  getTempFileInfo,
+  getTempFileStats,
+  initStorage 
+} = require('./modules/railway-storage');
+
+// ============================================================================
+// RAILWAY OPTIMIZATION - Memory and process management
+// ============================================================================
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err.message);
+  // Don't exit on Railway - just log
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit on Railway - just log
+});
+
+// Memory management for Railway
+if (process.env.NODE_ENV === 'production') {
+  setInterval(() => {
+    if (global.gc) {
+      global.gc();
+    }
+  }, 30000); // Force garbage collection every 30 seconds
+}
 
 // IMPORTAR SISTEMA DE AUTENTICACIÓN
 const {
@@ -17,12 +52,12 @@ const {
 } = require("./modules/auth-manager"); // NUEVO
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Configurar multer para uploads
+// Configurar multer para uploads (RAILWAY COMPATIBLE)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = "./uploads";
+    const uploadDir = STORAGE_CONFIG.uploads;
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -55,19 +90,39 @@ const upload = multer({
 app.use(express.json());
 app.use(cookieParser()); // NUEVO
 
-// Static serve for transformed images (view influencer photos)
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-app.use(
-  "/images/modified",
-  express.static(path.join(process.cwd(), "images", "modified"))
-);
+// Static serve for transformed images (RAILWAY COMPATIBLE)
+app.use("/uploads", express.static(STORAGE_CONFIG.uploads));
+app.use("/images/modified", express.static(STORAGE_CONFIG.images));
 app.use("/frontend", express.static(path.join(process.cwd(), "frontend")));
+
+// Serve videos with proper range support for streaming (RAILWAY COMPATIBLE)
+if (!isRailway) {
+  // Solo en desarrollo local - Railway usa endpoints de descarga temporal
+  app.use("/final_videos", express.static(STORAGE_CONFIG.videos, {
+    setHeaders: (res, filePath) => {
+      if (path.extname(filePath) === '.mp4') {
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Type', 'video/mp4');
+      }
+    }
+  }));
+
+  app.use("/final_videos_subtitled", express.static(STORAGE_CONFIG.videosSubtitled, {
+    setHeaders: (res, filePath) => {
+      if (path.extname(filePath) === '.mp4') {
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Type', 'video/mp4');
+      }
+    }
+  }));
+}
+
 app.use(express.static("."));
 
 // Voices endpoint (fills the <select id="voiceSelect"> in the dashboard)
 app.get('/api/voices', (req, res) => {
   try {
-    const { getAvailableVoices } = require('./audio-processor'); // <- ruta correcta en tu repo
+    const { getAvailableVoices } = require('./modules/audio-processor'); // <- ruta correcta en tu repo
     const voices = getAvailableVoices(); // [{ key, name, id }]
     return res.json({ success: true, voices });
   } catch (e) {
@@ -187,19 +242,34 @@ app.get("/api/auth/check", requireAuth, (req, res) => {
 
 // Endpoint para logs en tiempo real (Server-Sent Events)
 app.get("/api/logs", (req, res) => {
+  // Fix HTTP/2 protocol error in Railway
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
-    Connection: "keep-alive",
+    "Connection": "keep-alive",
     "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Cache-Control",
+    "X-Accel-Buffering": "no" // Disable nginx buffering
   });
 
   clients.push(res);
   console.log(`📱 Client connected. Total: ${clients.length}`);
 
+  // Send initial connection confirmation
+  try {
+    res.write(`data: ${JSON.stringify({ log: `[${new Date().toLocaleTimeString()}] ✅ Connected to server logs` })}\n\n`);
+  } catch (error) {
+    console.log('Error sending initial log:', error.message);
+  }
+
   req.on("close", () => {
     clients = clients.filter((client) => client !== res);
     console.log(`📱 Client disconnected. Total: ${clients.length}`);
+  });
+
+  req.on("error", (error) => {
+    console.log(`📱 SSE connection error: ${error.message}`);
+    clients = clients.filter((client) => client !== res);
   });
 });
 
@@ -232,7 +302,7 @@ function broadcastEvent(eventData) {
   });
 }
 
-// Endpoint para ejecutar scraper
+// Endpoint para ejecutar scraper (MANUAL - desde botón del dashboard)
 app.post("/api/scraper/start", requireAuth, (req, res) => {
   if (scraperProcess) {
     return res.json({
@@ -241,7 +311,8 @@ app.post("/api/scraper/start", requireAuth, (req, res) => {
     });
   }
 
-  broadcastLog("🚀 Starting scraper de noticias...");
+  broadcastLog("🚀 MANUAL SCRAPER: Iniciando scraper de noticias desde dashboard...");
+  broadcastLog("🔧 Este es un scraper MANUAL - No interfiere con el scraper automático");
 
   scraperProcess = spawn("node", ["scraper-4-paises-final.js"], {
     cwd: __dirname,
@@ -252,23 +323,27 @@ app.post("/api/scraper/start", requireAuth, (req, res) => {
       .toString()
       .split("\n")
       .filter((line) => line.trim());
-    lines.forEach((line) => broadcastLog(`📰 ${line}`));
+    lines.forEach((line) => broadcastLog(`📰 MANUAL: ${line}`));
   });
 
   scraperProcess.stderr.on("data", (data) => {
-    broadcastLog(`❌ Error: ${data.toString()}`);
+    broadcastLog(`❌ MANUAL Error: ${data.toString()}`);
   });
 
   scraperProcess.on("close", (code) => {
     if (code === 0) {
-      broadcastLog("✅ Scraper completed successfully");
+      broadcastLog("✅ MANUAL SCRAPER: Completado exitosamente");
+      broadcastLog("📊 Base de datos actualizada - Sistema listo para generar videos");
     } else {
-      broadcastLog(`❌ Scraper terminó con código: ${code}`);
+      broadcastLog(`❌ MANUAL SCRAPER: Terminó con código: ${code}`);
     }
     scraperProcess = null;
   });
 
-  res.json({ success: true, message: "Scraper initialized" });
+  res.json({ 
+    success: true, 
+    message: "Scraper manual iniciado - Revisa los logs para seguir el progreso" 
+  });
 });
 
 // Endpoint para iniciar bot
@@ -697,15 +772,22 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
     broadcastLog("🚀 ¡Tu video está listo para usar!");
 
     // ============================================================================
-    // ENVIAR EVENTO DE VIDEO COMPLETADO AL DASHBOARD
+    // ENVIAR EVENTO DE VIDEO COMPLETADO AL DASHBOARD (RAILWAY COMPATIBLE)
     // ============================================================================
     try {
-      // Extraer datos del video
-      const videoPath = `/final_videos/${videoFinal.nameArchivo}`;
-      const videoStats = fs.statSync(
-        path.join(__dirname, "final_videos", videoFinal.nameArchivo)
-      );
+      // Determinar rutas según el ambiente
+      const videoFilePath = isRailway 
+        ? path.join(STORAGE_CONFIG.videos, videoFinal.nameArchivo)
+        : path.join(__dirname, "final_videos", videoFinal.nameArchivo);
+      
+      const videoStats = fs.statSync(videoFilePath);
       const videoSizeBytes = videoStats.size;
+
+      // En Railway, registrar archivo como temporal para descarga
+      if (isRailway) {
+        registerTempFile(videoFinal.nameArchivo, videoFilePath, 'video', 30);
+        broadcastLog(`⏰ Railway: Video registrado para descarga temporal (30 min)`);
+      }
 
       // Calcular duración del proceso en segundos
       const processDurationMatch =
@@ -717,23 +799,31 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
         processDurationSeconds = minutes * 60 + seconds;
       }
 
+      // Configurar URL del video según ambiente
+      const videoUrl = isRailway 
+        ? `/api/temp/videos/${videoFinal.nameArchivo}`
+        : `/final_videos/${videoFinal.nameArchivo}`;
+
       // Broadcast video completion event to all connected clients
       broadcastLog(
         `📡 ENVIANDO EVENTO video_completion a ${clients.length} clientes`
       );
       broadcastLog(
-        `📋 Datos del evento: videoPath=${videoPath}, videoName=${videoFinal.nameArchivo}`
+        `📋 Datos del evento: videoPath=${videoUrl}, videoName=${videoFinal.nameArchivo}`
       );
 
       clients.forEach((client) => {
         try {
           const eventData = {
             type: "video_completion",
-            videoPath: videoPath,
+            videoPath: videoUrl,
             videoName: videoFinal.nameArchivo,
             videoSize: videoSizeBytes,
             processDuration: processDurationSeconds,
             timestamp: Date.now(),
+            isRailway: isRailway,
+            downloadUrl: isRailway ? videoUrl : null, // URL especial para descarga en Railway
+            autoDownload: isRailway, // Indicar si debe auto-descargar
           };
           client.write(`data: ${JSON.stringify(eventData)}\n\n`);
           broadcastLog(`✅ Evento enviado a cliente`);
@@ -743,10 +833,82 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       });
 
       broadcastLog("📡 ✅ EVENTO DE VIDEO COMPLETADO ENVIADO AL DASHBOARD");
+      
+      if (isRailway) {
+        broadcastLog("🚂 Railway: Video listo para descarga inmediata");
+        broadcastLog(`💾 URL de descarga: ${videoUrl}`);
+      }
+      
     } catch (eventError) {
       broadcastLog(
         `⚠️ Error enviando evento (no crítico): ${eventError.message}`
       );
+    }
+
+    // ============================================================================
+    // PROCESAMIENTO AUTOMÁTICO DE SUBTÍTULOS (RAILWAY COMPATIBLE)
+    // ============================================================================
+    try {
+      broadcastLog("🎵 Iniciando procesamiento automático de subtítulos...");
+      
+      const { processVideoSubtitles } = require('./modules/subtitle-processor');
+      const videoFilePath = isRailway 
+        ? path.join(STORAGE_CONFIG.videos, videoFinal.nameArchivo)
+        : path.join(__dirname, "final_videos", videoFinal.nameArchivo);
+      
+      // Verificar que el video original existe
+      if (fs.existsSync(videoFilePath)) {
+        broadcastLog(`🎬 Procesando subtítulos para: ${videoFinal.nameArchivo}`);
+        
+        // Procesar subtítulos en background (no bloquear respuesta)
+        processVideoSubtitles(videoFilePath, sessionId)
+          .then((subtitleResult) => {
+            broadcastLog(`✅ SUBTÍTULOS COMPLETADOS: ${subtitleResult.outputPath}`);
+            
+            // Enviar evento de video subtitulado completado
+            const subtitledVideoName = path.basename(subtitleResult.outputPath);
+            
+            // En Railway, registrar archivo subtitulado como temporal
+            if (isRailway) {
+              registerTempFile(subtitledVideoName, subtitleResult.outputPath, 'video_subtitled', 30);
+              broadcastLog(`⏰ Railway: Video subtitulado registrado para descarga temporal`);
+            }
+            
+            const subtitledVideoUrl = isRailway 
+              ? `/api/temp/videos_subtitled/${subtitledVideoName}`
+              : `/final_videos_subtitled/${subtitledVideoName}`;
+            
+            broadcastEvent({
+              type: 'video_completion',
+              videoPath: subtitledVideoUrl,
+              videoName: subtitledVideoName,
+              videoSize: subtitleResult.fileSize || 0,
+              sessionId: sessionId + '_subtitled',
+              isSubtitled: true,
+              originalVideo: videoFinal.nameArchivo,
+              timestamp: Date.now(),
+              isRailway: isRailway,
+              downloadUrl: isRailway ? subtitledVideoUrl : null,
+              autoDownload: isRailway
+            });
+            
+            broadcastLog(`📹 Video con subtítulos listo: ${subtitledVideoName}`);
+            broadcastLog(`🎯 Ambas versiones disponibles (original + subtítulos)`);
+            
+            if (isRailway) {
+              broadcastLog(`🚂 Railway: Video subtitulado listo para descarga inmediata`);
+              broadcastLog(`💾 URL de descarga: ${subtitledVideoUrl}`);
+            }
+          })
+          .catch((subtitleError) => {
+            broadcastLog(`⚠️ Error en subtítulos (no crítico): ${subtitleError.message}`);
+            broadcastLog(`✅ Video original sigue disponible sin subtítulos`);
+          });
+      } else {
+        broadcastLog(`⚠️ Video original no encontrado para subtítulos: ${videoFilePath}`);
+      }
+    } catch (subtitleSetupError) {
+      broadcastLog(`⚠️ Error configurando subtítulos: ${subtitleSetupError.message}`);
     }
 
     // ============================================================================
@@ -805,12 +967,12 @@ app.post("/api/video/reject/:sessionId", requireAuth, (req, res) => {
   res.json({ success: true, message: "Script rejected" });
 });
 
-// Endpoint para obtener estadísticas
+// Endpoint para obtener estadísticas (RAILWAY COMPATIBLE)
 app.get("/api/stats", requireAuth, (req, res) => {
   try {
-    // Contar archivos en carpetas
-    const videosDir = "final_videos";
-    const audioDir = "generated_audios";
+    // Contar archivos en carpetas (Railway compatible)
+    const videosDir = STORAGE_CONFIG.videos;
+    const audioDir = STORAGE_CONFIG.audios;
 
     let videosCount = 0;
     let audiosCount = 0;
@@ -827,6 +989,9 @@ app.get("/api/stats", requireAuth, (req, res) => {
         .filter((file) => file.endsWith(".mp3")).length;
     }
 
+    // En Railway, incluir stats de archivos temporales
+    const railwayStats = isRailway ? getTempFileStats() : null;
+
     res.json({
       vectores: 84, // Valor fijo por ahora
       videos: videosCount,
@@ -834,6 +999,27 @@ app.get("/api/stats", requireAuth, (req, res) => {
       exito: videosCount > 0 ? "100%" : "0%",
       scraperActive: scraperProcess !== null,
       botActive: botProcess !== null,
+      environment: isRailway ? 'Railway (Production)' : 'Local Development',
+      storage: {
+        type: isRailway ? 'Temporary' : 'Persistent',
+        videosDir: videosDir,
+        audioDir: audioDir
+      },
+      railway: railwayStats,
+      autoRAG: {
+        enabled: true,
+        schedules: ['06:00', '10:00', '14:00', '18:00'],
+        timezone: "America/Mexico_City",
+        lastRun: autoRAGStatus.lastRun 
+          ? new Date(autoRAGStatus.lastRun).toLocaleString('es-MX')
+          : 'Nunca ejecutado',
+        lastRunSuccess: autoRAGStatus.lastRunSuccess,
+        nextRun: autoRAGStatus.nextScheduledRun
+          ? new Date(autoRAGStatus.nextScheduledRun).toLocaleString('es-MX')
+          : 'Calculando...',
+        totalRuns: autoRAGStatus.totalRuns,
+        successfulRuns: autoRAGStatus.successfulRuns
+      }
     });
   } catch (error) {
     res.json({
@@ -843,6 +1029,15 @@ app.get("/api/stats", requireAuth, (req, res) => {
       exito: "0%",
       scraperActive: false,
       botActive: false,
+      environment: isRailway ? 'Railway (Production)' : 'Local Development',
+      error: error.message,
+      autoRAG: {
+        enabled: true,
+        schedules: ['06:00', '10:00', '14:00', '18:00'],
+        timezone: "America/Mexico_City",
+        lastRun: 'Error',
+        nextRun: 'Error'
+      }
     });
   }
 });
@@ -1375,6 +1570,120 @@ app.get("/api/videos/random", (req, res) => {
   }
 });
 
+// NEW: Endpoints for subtitled videos
+// Endpoint para obtener videos con subtítulos
+app.get("/api/videos/subtitled", (req, res) => {
+  try {
+    const { getSubtitledVideos } = require('./modules/subtitle-processor');
+    
+    getSubtitledVideos()
+      .then(videos => {
+        console.log(`[Subtitled Videos API] Found ${videos.length} subtitled videos`);
+        
+        res.json({
+          success: true,
+          videos,
+          total: videos.length,
+        });
+      })
+      .catch(error => {
+        console.error("❌ [Subtitled Videos API] Error:", error);
+        res.json({
+          success: false,
+          message: "Error loading subtitled videos",
+          videos: [],
+        });
+      });
+  } catch (error) {
+    console.error("❌ [Subtitled Videos API] Error:", error);
+    res.json({
+      success: false,
+      message: "Error loading subtitled videos",
+      videos: [],
+    });
+  }
+});
+
+// Endpoint combinado que devuelve videos originales y con subtítulos
+app.get("/api/videos/combined", (req, res) => {
+  try {
+    const videosDir = path.join(__dirname, "final_videos");
+    const { getSubtitledVideos } = require('./modules/subtitle-processor');
+
+    // Videos originales
+    let originalVideos = [];
+    if (fs.existsSync(videosDir)) {
+      originalVideos = fs
+        .readdirSync(videosDir)
+        .filter((file) => file.toLowerCase().endsWith(".mp4"))
+        .map((file) => {
+          const filePath = path.join(videosDir, file);
+          const stats = fs.statSync(filePath);
+          return {
+            filename: file,
+            path: `/final_videos/${file}`,
+            size: Math.round(stats.size / (1024 * 1024)),
+            date: stats.mtime.toISOString(),
+            created: stats.birthtime,
+            title: file
+              .replace(".mp4", "")
+              .replace(/video_(\d{8})_(\d{6})/, "Video $1 $2"),
+            isSubtitled: false,
+            type: 'original'
+          };
+        });
+    }
+
+    // Videos con subtítulos
+    getSubtitledVideos()
+      .then(subtitledVideos => {
+        // Agregar tipo para diferenciar
+        const typedSubtitledVideos = subtitledVideos.map(video => ({
+          ...video,
+          type: 'subtitled'
+        }));
+
+        // Combinar y ordenar por fecha
+        const allVideos = [...originalVideos, ...typedSubtitledVideos]
+          .sort((a, b) => new Date(b.created || b.date) - new Date(a.created || a.date));
+
+        console.log(`🎥 [Combined Videos API] Found ${originalVideos.length} original + ${subtitledVideos.length} subtitled videos`);
+
+        res.json({
+          success: true,
+          videos: allVideos,
+          stats: {
+            total: allVideos.length,
+            original: originalVideos.length,
+            subtitled: subtitledVideos.length
+          }
+        });
+      })
+      .catch(error => {
+        console.error("❌ [Combined Videos API] Error with subtitled videos:", error);
+        
+        // Si falla subtítulos, devolver solo originales
+        res.json({
+          success: true,
+          videos: originalVideos,
+          stats: {
+            total: originalVideos.length,
+            original: originalVideos.length,
+            subtitled: 0
+          },
+          warning: "Could not load subtitled videos"
+        });
+      });
+  } catch (error) {
+    console.error("❌ [Combined Videos API] Error:", error);
+    res.json({
+      success: false,
+      message: "Error loading videos",
+      videos: [],
+    });
+  }
+});
+
 // Endpoint para limpiar logs
 app.post("/api/logs/clear", requireAuth, (req, res) => {
   broadcastLog("🗑️ Logs limpiados");
@@ -1392,6 +1701,329 @@ app.post("/api/news/clear-cache", requireAuth, (req, res) => {
     "🗑️ Cache del carousel limpiado - próxima carga usará filtros mejorados"
   );
   res.json({ success: true, message: "Carousel cache cleared" });
+});
+
+// ============================================================================
+// RAILWAY TEMPORARY FILE ENDPOINTS - Descarga de archivos temporales
+// ============================================================================
+
+// Endpoint para descargar videos temporales en Railway
+app.get('/api/temp/videos/:filename', (req, res) => {
+  if (!isRailway) {
+    return res.status(404).json({ error: 'Only available in Railway environment' });
+  }
+  
+  const { filename } = req.params;
+  const fileInfo = getTempFileInfo(filename);
+  
+  if (!fileInfo) {
+    return res.status(404).json({ error: 'File not found or expired' });
+  }
+  
+  const filePath = fileInfo.path;
+  
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Physical file not found' });
+  }
+  
+  try {
+    const stat = fs.statSync(filePath);
+    const fileSize = stat.size;
+    
+    // Marcar como descargado
+    markAsDownloaded(filename);
+    
+    // Configurar headers para descarga
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Length', fileSize);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Accept-Ranges', 'bytes');
+    
+    // Stream del archivo
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    
+    console.log(`📥 Railway: Video downloaded - ${filename}`);
+    
+  } catch (error) {
+    console.error(`❌ Railway download error: ${error.message}`);
+    res.status(500).json({ error: 'Download failed' });
+  }
+});
+
+// Endpoint para descargar videos subtitulados temporales
+app.get('/api/temp/videos_subtitled/:filename', (req, res) => {
+  if (!isRailway) {
+    return res.status(404).json({ error: 'Only available in Railway environment' });
+  }
+  
+  const { filename } = req.params;
+  const fileInfo = getTempFileInfo(filename);
+  
+  if (!fileInfo || fileInfo.type !== 'video_subtitled') {
+    return res.status(404).json({ error: 'Subtitled file not found or expired' });
+  }
+  
+  const filePath = fileInfo.path;
+  
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Physical file not found' });
+  }
+  
+  try {
+    const stat = fs.statSync(filePath);
+    const fileSize = stat.size;
+    
+    markAsDownloaded(filename);
+    
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Length', fileSize);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Accept-Ranges', 'bytes');
+    
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    
+    console.log(`📥 Railway: Subtitled video downloaded - ${filename}`);
+    
+  } catch (error) {
+    console.error(`❌ Railway subtitled download error: ${error.message}`);
+    res.status(500).json({ error: 'Download failed' });
+  }
+});
+
+// Endpoint para obtener estadísticas de archivos temporales (Railway)
+app.get('/api/temp/stats', (req, res) => {
+  if (!isRailway) {
+    return res.json({ 
+      railway: false, 
+      message: 'Local development mode' 
+    });
+  }
+  
+  const stats = getTempFileStats();
+  
+  res.json({
+    railway: true,
+    environment: 'production',
+    tempFiles: stats,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ============================================================================
+// MODIFICAR ENDPOINTS EXISTENTES PARA RAILWAY COMPATIBILITY
+// ============================================================================
+
+// Endpoint para descargar videos con manejo correcto de rangos
+app.get('/api/video/download/:type/:filename', (req, res) => {
+  try {
+    const { type, filename } = req.params;
+    
+    let videoDir;
+    if (type === 'subtitled') {
+      videoDir = path.join(__dirname, 'final_videos_subtitled');
+    } else if (type === 'normal') {
+      videoDir = path.join(__dirname, 'final_videos');
+    } else {
+      return res.status(400).json({ error: 'Invalid video type' });
+    }
+    
+    const videoPath = path.join(videoDir, filename);
+    
+    // Verificar que el archivo existe
+    if (!fs.existsSync(videoPath)) {
+      console.log(`❌ Video not found: ${videoPath}`);
+      return res.status(404).json({ error: 'Video not found' });
+    }
+    
+    const stat = fs.statSync(videoPath);
+    const fileSize = stat.size;
+    const range = req.headers.range;
+    
+    if (range) {
+      // Parse range header
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      
+      if (start >= fileSize) {
+        res.status(416).send('Range not satisfiable\n' + start + ' >= ' + fileSize);
+        return;
+      }
+      
+      const chunksize = (end - start) + 1;
+      const file = fs.createReadStream(videoPath, { start, end });
+      const head = {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': 'video/mp4',
+      };
+      
+      res.writeHead(206, head);
+      file.pipe(res);
+    } else {
+      // No range, send entire file
+      const head = {
+        'Content-Length': fileSize,
+        'Content-Type': 'video/mp4',
+        'Accept-Ranges': 'bytes',
+        'Content-Disposition': `attachment; filename="${filename}"`
+      };
+      
+      res.writeHead(200, head);
+      fs.createReadStream(videoPath).pipe(res);
+    }
+    
+    console.log(`📥 Video download: ${filename} (${type})`);
+    
+  } catch (error) {
+    console.error(`❌ Video download error: ${error.message}`);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Endpoint para verificar si un video existe
+app.get('/api/video/exists/:type/:filename', (req, res) => {
+  try {
+    const { type, filename } = req.params;
+    
+    let videoDir;
+    if (type === 'subtitled') {
+      videoDir = path.join(__dirname, 'final_videos_subtitled');
+    } else if (type === 'normal') {
+      videoDir = path.join(__dirname, 'final_videos');
+    } else {
+      return res.status(400).json({ error: 'Invalid video type' });
+    }
+    
+    const videoPath = path.join(videoDir, filename);
+    const exists = fs.existsSync(videoPath);
+    
+    if (exists) {
+      const stat = fs.statSync(videoPath);
+      res.json({
+        exists: true,
+        size: stat.size,
+        sizeFormatted: `${(stat.size / (1024 * 1024)).toFixed(2)} MB`,
+        modified: stat.mtime
+      });
+    } else {
+      res.json({ exists: false });
+    }
+    
+  } catch (error) {
+    console.error(`❌ Video exists check error: ${error.message}`);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ============================================================================
+// TEST ENDPOINTS - Para probar el modal de progreso (RAILWAY COMPATIBLE)
+// ============================================================================
+app.post("/api/test/simulate-video", requireAuth, async (req, res) => {
+  try {
+    const { action, videoName } = req.body;
+    
+    if (action === 'simulate_arrival') {
+      const timestamp = new Date().toISOString().replace(/[:\-T]/g, '').substring(0, 15);
+      const newVideoName = videoName || `test_video_${timestamp}.mp4`;
+      
+      // Railway compatible paths
+      const sourceVideo = isRailway 
+        ? path.join(STORAGE_CONFIG.videos, 'demo1.mp4')
+        : path.join(__dirname, 'final_videos', 'demo1.mp4');
+      const destinationVideo = isRailway 
+        ? path.join(STORAGE_CONFIG.videos, newVideoName)
+        : path.join(__dirname, 'final_videos', newVideoName);
+      
+      // Crear video de prueba (si no existe fuente, crear uno simple)
+      let videoCreated = false;
+      
+      if (fs.existsSync(sourceVideo)) {
+        fs.copyFileSync(sourceVideo, destinationVideo);
+        videoCreated = true;
+        broadcastLog(`🧪 Test: Video simulado copiado - ${newVideoName}`);
+      } else {
+        // Crear video de prueba mínimo (100KB de datos dummy)
+        const dummyVideoData = Buffer.alloc(100 * 1024, 0); // 100KB dummy data
+        fs.writeFileSync(destinationVideo, dummyVideoData);
+        videoCreated = true;
+        broadcastLog(`🧪 Test: Video dummy creado - ${newVideoName} (100KB)`);
+      }
+      
+      if (videoCreated) {
+        // En Railway, registrar archivo temporal
+        if (isRailway) {
+          registerTempFile(newVideoName, destinationVideo, 'video', 30);
+          broadcastLog(`⏰ Railway: Test video registrado para descarga temporal`);
+        }
+        
+        // Simular el evento de video completado
+        setTimeout(() => {
+          const videoStats = fs.statSync(destinationVideo);
+          
+          // Railway compatible video path
+          const videoPath = isRailway 
+            ? `/api/temp/videos/${newVideoName}`
+            : `/final_videos/${newVideoName}`;
+          
+          const videoData = {
+            type: 'video_completion',
+            videoPath: videoPath,
+            videoName: newVideoName,
+            videoSize: videoStats.size,
+            size: `${(videoStats.size / (1024 * 1024)).toFixed(2)} MB`,
+            sessionId: 'test_session_' + timestamp,
+            isRailway: isRailway,
+            autoDownload: isRailway,
+            downloadUrl: isRailway ? videoPath : null
+          };
+          
+          // Enviar evento SSE
+          clients.forEach(client => {
+            try {
+              client.write(`data: ${JSON.stringify(videoData)}\n\n`);
+              console.log('✅ Test video completion event sent to client');
+            } catch (e) {
+              console.log('Error enviando test event:', e.message);
+            }
+          });
+          
+          broadcastLog(`🎬 Test: Evento video_completion enviado para ${newVideoName}`);
+          console.log('📹 Test video data sent:', videoData);
+          
+          if (isRailway) {
+            broadcastLog(`🚂 Railway: Test video ready for download at ${videoPath}`);
+          }
+          
+        }, 1000);
+        
+        res.json({ 
+          success: true, 
+          message: 'Video simulation started',
+          videoName: newVideoName 
+        });
+      } else {
+        res.json({ 
+          success: false, 
+          message: 'Source video not found' 
+        });
+      }
+    } else {
+      res.json({ 
+        success: false, 
+        message: 'Unknown action' 
+      });
+    }
+  } catch (error) {
+    console.error('Error in simulate-video:', error);
+    res.json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
 });
 
 // Servir página de login
@@ -1456,6 +2088,333 @@ app.listen(PORT, () => {
   broadcastLog("🌐 Servidor Express initialized");
   broadcastLog("📋 Dashboard web disponible");
   broadcastLog("⚡ System ready to use");
+  
+  // Inicializar sistema de storage (Railway compatible)
+  initStorage();
+  
+  // Iniciar watcher de videos (solo en desarrollo local)
+  if (!isRailway) {
+    setupVideoWatcher();
+  } else {
+    broadcastLog("🚂 Railway mode: File watcher disabled (using temp storage)");
+  }
+  
+  // Iniciar scraper automático con horarios específicos
+  setupAutoRAG();
+});
+
+// ============================================================================
+// FILE WATCHER - Detectar videos nuevos automáticamente
+// ============================================================================
+function setupVideoWatcher() {
+  const finalVideosPath = path.join(__dirname, 'final_videos');
+  const subtitledVideosPath = path.join(__dirname, 'final_videos_subtitled');
+  
+  console.log('📁 Setting up video file watcher...');
+  
+  // Watcher para final_videos
+  const watcher = chokidar.watch([finalVideosPath, subtitledVideosPath], {
+    ignored: /^\./, 
+    persistent: true,
+    ignoreInitial: true // Solo nuevos archivos, no los existentes
+  });
+  
+  watcher.on('add', (filePath) => {
+    if (path.extname(filePath).toLowerCase() === '.mp4') {
+      const videoName = path.basename(filePath);
+      const videoStats = fs.statSync(filePath);
+      const isSubtitled = filePath.includes('final_videos_subtitled');
+      
+      console.log(`🎬 New video detected: ${videoName} (${isSubtitled ? 'subtitled' : 'normal'})`);
+      
+      // Generar evento de video completado
+      setTimeout(() => {
+        const videoData = {
+          type: 'video_completion',
+          videoPath: isSubtitled ? `/final_videos_subtitled/${videoName}` : `/final_videos/${videoName}`,
+          videoName: videoName,
+          videoSize: videoStats.size,
+          size: `${(videoStats.size / (1024 * 1024)).toFixed(2)} MB`,
+          sessionId: 'auto_detected_' + Date.now(),
+          isSubtitled: isSubtitled
+        };
+        
+        // Enviar evento SSE a todos los clientes
+        clients.forEach(client => {
+          try {
+            client.write(`data: ${JSON.stringify(videoData)}\n\n`);
+          } catch (e) {
+            console.log('Error sending auto-detected video event:', e.message);
+          }
+        });
+        
+        broadcastLog(`🎬 Auto-detected video: ${videoName} - Event sent to clients`);
+        console.log('📹 Auto-detected video data:', videoData);
+      }, 500); // Small delay to ensure file is fully written
+    }
+  });
+  
+  watcher.on('error', (error) => {
+    console.error('📁 File watcher error:', error);
+  });
+  
+  console.log('✅ Video file watcher active');
+  return watcher;
+}
+
+// ============================================================================
+// AUTO RAG SCRAPER - Ejecutar a horas específicas diariamente
+// ============================================================================
+
+// Variable global para tracking de ejecuciones
+let autoRAGStatus = {
+  lastRun: null,
+  lastRunSuccess: null,
+  nextScheduledRun: null,
+  totalRuns: 0,
+  successfulRuns: 0,
+  failedRuns: 0
+};
+
+function setupAutoRAG() {
+  console.log('📅 Setting up automatic RAG scraper...');
+  console.log('⏰ Scraper will run at: 06:00, 10:00, 14:00, 18:00 daily');
+  
+  // Configurar horarios específicos: 6:00 AM, 10:00 AM, 2:00 PM, 6:00 PM
+  const schedules = [
+    { time: '0 6 * * *', name: '06:00', hour: 6 },   // 6:00 AM todos los días
+    { time: '0 10 * * *', name: '10:00', hour: 10 }, // 10:00 AM todos los días  
+    { time: '0 14 * * *', name: '14:00', hour: 14 }, // 2:00 PM todos los días
+    { time: '0 18 * * *', name: '18:00', hour: 18 }  // 6:00 PM todos los días
+  ];
+  
+  // Configurar cada tarea programada
+  schedules.forEach(schedule => {
+    const task = cron.schedule(schedule.time, () => {
+      console.log(`🕐 AUTO RAG: Iniciando actualización programada a las ${schedule.name}`);
+      broadcastLog(`🕐 AUTO RAG: Actualización programada iniciada (${schedule.name})`);
+      
+      // Actualizar stats
+      autoRAGStatus.totalRuns++;
+      autoRAGStatus.lastRun = new Date().toISOString();
+      
+      // Ejecutar scraper
+      runAutoScraper(`scheduled_${schedule.name}`, schedule.name);
+    }, {
+      timezone: "America/Mexico_City" // Zona horaria México
+    });
+    
+    console.log(`✅ Programado RAG automático: ${schedule.name} hrs (${schedule.time})`);
+  });
+  
+  // Calcular próxima ejecución
+  calculateNextRun(schedules);
+  
+  broadcastLog(`📅 RAG automático configurado: 06:00, 10:00, 14:00, 18:00 hrs`);
+  broadcastLog(`🌍 Zona horaria: America/Mexico_City`);
+  broadcastLog(`⚡ El scraper manual sigue disponible en el dashboard`);
+  console.log('🎯 Automatic RAG scraper configured successfully');
+  console.log('💡 Manual scraper button remains functional');
+}
+
+// Calcular próxima ejecución programada
+function calculateNextRun(schedules) {
+  try {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    // Encontrar la próxima hora programada
+    const scheduledHours = schedules.map(s => s.hour).sort((a, b) => a - b);
+    let nextHour = null;
+    
+    for (const hour of scheduledHours) {
+      if (hour > currentHour || (hour === currentHour && currentMinute < 5)) {
+        nextHour = hour;
+        break;
+      }
+    }
+    
+    // Si no hay ninguna hora mayor hoy, la próxima es la primera de mañana
+    if (nextHour === null) {
+      nextHour = scheduledHours[0];
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(nextHour, 0, 0, 0);
+      autoRAGStatus.nextScheduledRun = tomorrow.toISOString();
+    } else {
+      const nextRun = new Date(now);
+      nextRun.setHours(nextHour, 0, 0, 0);
+      autoRAGStatus.nextScheduledRun = nextRun.toISOString();
+    }
+    
+    const nextRunDate = new Date(autoRAGStatus.nextScheduledRun);
+    console.log(`⏰ Próxima ejecución automática: ${nextRunDate.toLocaleString('es-MX')}`);
+    broadcastLog(`⏰ Próxima ejecución automática: ${nextRunDate.toLocaleString('es-MX')}`);
+    
+  } catch (error) {
+    console.error('Error calculando próxima ejecución:', error.message);
+  }
+}
+
+// Función para ejecutar el scraper automáticamente
+function runAutoScraper(source = 'auto', scheduleName = null) {
+  // Verificar si ya hay un scraper ejecutándose
+  if (scraperProcess !== null) {
+    broadcastLog(`⚠️ AUTO RAG: Scraper ya está ejecutándose, saltando ejecución programada`);
+    console.log('⚠️ AUTO RAG: Skipping scheduled run - scraper already running');
+    
+    // Contar como fallida
+    if (source.startsWith('scheduled_')) {
+      autoRAGStatus.failedRuns++;
+    }
+    return;
+  }
+  
+  try {
+    const isScheduled = source.startsWith('scheduled_');
+    const displayName = scheduleName ? `a las ${scheduleName} hrs` : `(${source})`;
+    
+    broadcastLog(`🚀 AUTO RAG: Iniciando scraper ${isScheduled ? 'AUTOMÁTICO' : 'MANUAL'} ${displayName}`);
+    console.log(`🚀 AUTO RAG: Starting ${isScheduled ? 'automatic' : 'manual'} scraper from ${source}`);
+    
+    scraperProcess = spawn("node", ["scraper-4-paises-final.js"], {
+      cwd: __dirname,
+      stdio: ['ignore', 'pipe', 'pipe'] // Para capturar output
+    });
+
+    scraperProcess.stdout.on("data", (data) => {
+      const lines = data
+        .toString()
+        .split("\n")
+        .filter((line) => line.trim());
+      lines.forEach((line) => {
+        console.log(`📰 ${isScheduled ? 'AUTO' : 'MANUAL'} RAG: ${line}`);
+        broadcastLog(`📰 ${isScheduled ? 'AUTO' : 'MANUAL'} RAG: ${line}`);
+      });
+    });
+
+    scraperProcess.stderr.on("data", (data) => {
+      const errorMsg = data.toString();
+      console.error(`❌ AUTO RAG Error: ${errorMsg}`);
+      broadcastLog(`❌ AUTO RAG Error: ${errorMsg}`);
+    });
+
+    scraperProcess.on("close", (code) => {
+      const success = code === 0;
+      
+      if (success) {
+        broadcastLog(`✅ ${isScheduled ? 'AUTO' : 'MANUAL'} RAG: Actualización completada exitosamente ${displayName}`);
+        console.log(`✅ AUTO RAG: Completed successfully from ${source}`);
+        
+        // Actualizar stats
+        if (isScheduled) {
+          autoRAGStatus.successfulRuns++;
+          autoRAGStatus.lastRunSuccess = true;
+        }
+      } else {
+        broadcastLog(`❌ ${isScheduled ? 'AUTO' : 'MANUAL'} RAG: Falló con código ${code} ${displayName}`);
+        console.error(`❌ AUTO RAG: Failed with code ${code} from ${source}`);
+        
+        // Actualizar stats
+        if (isScheduled) {
+          autoRAGStatus.failedRuns++;
+          autoRAGStatus.lastRunSuccess = false;
+        }
+      }
+      
+      scraperProcess = null;
+      
+      // Enviar notificación de finalización
+      broadcastLog(`📊 ${isScheduled ? 'AUTO' : 'MANUAL'} RAG: Base de datos actualizada, sistema listo para generar videos`);
+      
+      // Recalcular próxima ejecución si es programada
+      if (isScheduled) {
+        const schedules = [
+          { time: '0 6 * * *', name: '06:00', hour: 6 },
+          { time: '0 10 * * *', name: '10:00', hour: 10 },
+          { time: '0 14 * * *', name: '14:00', hour: 14 },
+          { time: '0 18 * * *', name: '18:00', hour: 18 }
+        ];
+        calculateNextRun(schedules);
+      }
+    });
+
+    scraperProcess.on("error", (error) => {
+      console.error(`❌ AUTO RAG Process Error: ${error.message}`);
+      broadcastLog(`❌ AUTO RAG Process Error: ${error.message}`);
+      scraperProcess = null;
+      
+      // Actualizar stats
+      if (isScheduled) {
+        autoRAGStatus.failedRuns++;
+        autoRAGStatus.lastRunSuccess = false;
+      }
+    });
+    
+  } catch (error) {
+    console.error(`❌ AUTO RAG: Error starting scraper: ${error.message}`);
+    broadcastLog(`❌ AUTO RAG: Error starting scraper: ${error.message}`);
+    scraperProcess = null;
+    
+    // Actualizar stats
+    if (source.startsWith('scheduled_')) {
+      autoRAGStatus.failedRuns++;
+      autoRAGStatus.lastRunSuccess = false;
+    }
+  }
+}
+
+// Endpoint para configurar/ver horarios de RAG automático
+app.get("/api/rag/schedule", requireAuth, (req, res) => {
+  const schedules = [
+    { time: '06:00', cron: '0 6 * * *', description: 'Actualización matutina' },
+    { time: '10:00', cron: '0 10 * * *', description: 'Actualización media mañana' },
+    { time: '14:00', cron: '0 14 * * *', description: 'Actualización tarde' },
+    { time: '18:00', cron: '0 18 * * *', description: 'Actualización vespertina' }
+  ];
+  
+  const status = {
+    enabled: true,
+    timezone: 'America/Mexico_City',
+    schedules: schedules,
+    lastRun: autoRAGStatus.lastRun 
+      ? new Date(autoRAGStatus.lastRun).toLocaleString('es-MX') 
+      : 'Nunca ejecutado',
+    lastRunSuccess: autoRAGStatus.lastRunSuccess,
+    nextRun: autoRAGStatus.nextScheduledRun 
+      ? new Date(autoRAGStatus.nextScheduledRun).toLocaleString('es-MX')
+      : 'Calculando...',
+    scraperActive: scraperProcess !== null,
+    stats: {
+      totalRuns: autoRAGStatus.totalRuns,
+      successfulRuns: autoRAGStatus.successfulRuns,
+      failedRuns: autoRAGStatus.failedRuns,
+      successRate: autoRAGStatus.totalRuns > 0 
+        ? Math.round((autoRAGStatus.successfulRuns / autoRAGStatus.totalRuns) * 100) + '%'
+        : 'N/A'
+    }
+  };
+  
+  res.json({ success: true, autoRAG: status });
+});
+
+// Endpoint para ejecutar RAG manualmente (sin interferir con automático)
+app.post("/api/rag/run-now", requireAuth, (req, res) => {
+  if (scraperProcess !== null) {
+    return res.json({
+      success: false,
+      message: "RAG scraper ya está ejecutándose. Espera a que termine."
+    });
+  }
+  
+  broadcastLog("🔄 RAG: Ejecución manual solicitada por usuario");
+  runAutoScraper('manual_dashboard', 'MANUAL');
+  
+  res.json({
+    success: true,
+    message: "RAG scraper iniciado manualmente. Revisa los logs para seguir el progreso."
+  });
 });
 
 // Manejo de cierre del servidor

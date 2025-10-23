@@ -3,7 +3,7 @@
 // Funcionalidades adicionales para el dashboard
 // ============================================================================
 
-console.log('📱 NewDashboard script loaded');
+
 
 // ============================================================================
 // FILE UPLOAD FUNCTIONALITY
@@ -21,7 +21,7 @@ function setupPhotoUpload() {
     return;
   }
 
-  console.log('✅ Setting up photo upload functionality');
+  
 
   // File input change handler
   photoUpload.addEventListener('change', function(event) {
@@ -150,7 +150,7 @@ function setupPhotoUpload() {
   // Expose reset function globally for form reset
   window.resetPhotoUpload = resetUploadZone;
 
-  console.log('🎯 Photo upload functionality initialized');
+  
 }
 
 // ============================================================================
@@ -195,7 +195,7 @@ function setupFormValidation() {
   // Initial validation
   validateForm();
 
-  console.log('✅ Form validation setup complete');
+  
 }
 
 // ============================================================================
@@ -204,7 +204,7 @@ function setupFormValidation() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 NewDashboard initializing...');
+  
   
   // Setup upload functionality
   setTimeout(() => {
@@ -216,7 +216,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupFormValidation();
   }, 200);
   
-  console.log('✅ NewDashboard initialized');
+  
 });
 
-console.log('✅ NewDashboard script ready');

@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (isLeonardoInitialized) return;
   isLeonardoInitialized = true;
   
-  console.log('🎨 Leonardo behavior initialized');
+  
   
   // Header shrink effect (throttled)
   let ticking = false;
@@ -47,5 +47,5 @@ document.addEventListener('DOMContentLoaded', function() {
   
   setTimeout(initShowcaseLoader, 1000);
   
-  console.log('✅ Leonardo behavior ready');
+  
 });

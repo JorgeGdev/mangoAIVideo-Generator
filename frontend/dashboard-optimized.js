@@ -10,7 +10,7 @@ let isInitialized = false;
 if (isInitialized) {
   console.log('Dashboard already initialized');
 } else {
-  console.log('🚀 Initializing Dashboard...');
+  
   isInitialized = true;
 }
 
@@ -30,7 +30,7 @@ let carouselState = {
 // ============================================================================
 async function fetchCarouselNews() {
   try {
-    console.log("📰 [Carousel] Fetching news...");
+    
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
@@ -708,7 +708,7 @@ async function logout() {
 // ============================================================================
 async function loadShowcaseVideos() {
   try {
-    console.log('📹 [Showcase] Loading videos (original + subtitled)...');
+    
     
     const response = await fetch('/api/videos/combined');
     const result = await response.json();
@@ -722,7 +722,7 @@ async function loadShowcaseVideos() {
       
       console.log(`✅ [Showcase] Loaded ${result.stats?.total || result.videos.length} total videos (${result.stats?.original || 0} original, ${result.stats?.subtitled || 0} subtitled)`);
     } else {
-      console.log('⚠️ [Showcase] No videos found, showing placeholder');
+      
       showShowcasePlaceholder();
     }
   } catch (error) {
@@ -787,7 +787,7 @@ function showShowcasePlaceholder() {
 
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🚀 Dashboard loading...');
+  
   
   // Initialize core functions
   verificarAuth();
@@ -805,7 +805,7 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarEstadisticas();
   }, 10000);
   
-  console.log('✅ Dashboard ready');
+  
 });
 
 // Cleanup on page unload

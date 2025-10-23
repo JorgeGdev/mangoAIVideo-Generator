@@ -4,6 +4,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser"); // NUEVO
 const multer = require("multer"); // NUEVO para uploads
 const chokidar = require("chokidar"); // NUEVO para watch de archivos
+const cron = require("node-cron"); // Para RAG automático
 const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
@@ -859,6 +860,12 @@ app.get("/api/stats", requireAuth, (req, res) => {
       exito: videosCount > 0 ? "100%" : "0%",
       scraperActive: scraperProcess !== null,
       botActive: botProcess !== null,
+      autoRAG: {
+        enabled: true,
+        nextSchedule: "6:00 AM, 10:00 AM, 2:00 PM, 6:00 PM",
+        timezone: "America/Mexico_City",
+        lastUpdate: "Sistema iniciado"
+      }
     });
   } catch (error) {
     res.json({
@@ -1670,6 +1677,9 @@ app.listen(PORT, () => {
   
   // Iniciar watcher de videos
   setupVideoWatcher();
+  
+  // Iniciar scraper automático con horarios específicos
+  setupAutoRAG();
 });
 
 // ============================================================================
@@ -1730,6 +1740,145 @@ function setupVideoWatcher() {
   console.log('✅ Video file watcher active');
   return watcher;
 }
+
+// ============================================================================
+// AUTO RAG SCRAPER - Ejecutar a horas específicas diariamente
+// ============================================================================
+function setupAutoRAG() {
+  console.log('📅 Setting up automatic RAG scraper...');
+  
+  // Configurar horarios específicos: 6:00 AM, 10:00 AM, 2:00 PM, 6:00 PM
+  const schedules = [
+    { time: '0 6 * * *', name: '6:00 AM' },   // 6:00 AM todos los días
+    { time: '0 10 * * *', name: '10:00 AM' }, // 10:00 AM todos los días  
+    { time: '0 14 * * *', name: '2:00 PM' },  // 2:00 PM todos los días
+    { time: '0 18 * * *', name: '6:00 PM' }   // 6:00 PM todos los días
+  ];
+  
+  schedules.forEach(schedule => {
+    cron.schedule(schedule.time, () => {
+      console.log(`🕐 AUTO RAG: Iniciando actualización programada a las ${schedule.name}`);
+      broadcastLog(`🕐 AUTO RAG: Actualización programada iniciada (${schedule.name})`);
+      runAutoScraper(`scheduled_${schedule.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    }, {
+      timezone: "America/Mexico_City" // Ajusta según tu zona horaria
+    });
+    
+    console.log(`✅ Programado RAG automático: ${schedule.name} (${schedule.time})`);
+    broadcastLog(`✅ RAG automático programado: ${schedule.name}`);
+  });
+  
+  // Mostrar próxima ejecución
+  const now = new Date();
+  const nextRuns = schedules.map(schedule => {
+    const cronTime = cron.validate(schedule.time) ? schedule.time : null;
+    return { name: schedule.name, time: schedule.time };
+  });
+  
+  broadcastLog(`📅 RAG se ejecutará automáticamente a: ${schedules.map(s => s.name).join(', ')}`);
+  console.log('🎯 Automatic RAG scraper configured successfully');
+}
+
+// Función para ejecutar el scraper automáticamente
+function runAutoScraper(source = 'auto') {
+  // Verificar si ya hay un scraper ejecutándose
+  if (scraperProcess !== null) {
+    broadcastLog(`⚠️ AUTO RAG: Scraper ya está ejecutándose, saltando ejecución programada`);
+    console.log('⚠️ AUTO RAG: Skipping scheduled run - scraper already running');
+    return;
+  }
+  
+  try {
+    broadcastLog(`🚀 AUTO RAG: Iniciando scraper automático (${source})`);
+    console.log(`🚀 AUTO RAG: Starting automatic scraper from ${source}`);
+    
+    scraperProcess = spawn("node", ["scraper-4-paises-final.js"], {
+      cwd: __dirname,
+      stdio: ['ignore', 'pipe', 'pipe'] // Para capturar output
+    });
+
+    scraperProcess.stdout.on("data", (data) => {
+      const lines = data
+        .toString()
+        .split("\n")
+        .filter((line) => line.trim());
+      lines.forEach((line) => {
+        console.log(`📰 AUTO RAG: ${line}`);
+        broadcastLog(`📰 AUTO RAG: ${line}`);
+      });
+    });
+
+    scraperProcess.stderr.on("data", (data) => {
+      const errorMsg = data.toString();
+      console.error(`❌ AUTO RAG Error: ${errorMsg}`);
+      broadcastLog(`❌ AUTO RAG Error: ${errorMsg}`);
+    });
+
+    scraperProcess.on("close", (code) => {
+      if (code === 0) {
+        broadcastLog(`✅ AUTO RAG: Actualización completada exitosamente (${source})`);
+        console.log(`✅ AUTO RAG: Completed successfully from ${source}`);
+      } else {
+        broadcastLog(`❌ AUTO RAG: Falló con código ${code} (${source})`);
+        console.error(`❌ AUTO RAG: Failed with code ${code} from ${source}`);
+      }
+      scraperProcess = null;
+      
+      // Enviar notificación de finalización
+      broadcastLog(`📊 AUTO RAG: Base de datos actualizada, sistema listo para generar videos`);
+    });
+
+    scraperProcess.on("error", (error) => {
+      console.error(`❌ AUTO RAG Process Error: ${error.message}`);
+      broadcastLog(`❌ AUTO RAG Process Error: ${error.message}`);
+      scraperProcess = null;
+    });
+    
+  } catch (error) {
+    console.error(`❌ AUTO RAG: Error starting scraper: ${error.message}`);
+    broadcastLog(`❌ AUTO RAG: Error starting scraper: ${error.message}`);
+    scraperProcess = null;
+  }
+}
+
+// Endpoint para configurar/ver horarios de RAG automático
+app.get("/api/rag/schedule", requireAuth, (req, res) => {
+  const schedules = [
+    { time: '6:00 AM', cron: '0 6 * * *', description: 'Morning update' },
+    { time: '10:00 AM', cron: '0 10 * * *', description: 'Mid-morning update' },
+    { time: '2:00 PM', cron: '0 14 * * *', description: 'Afternoon update' },
+    { time: '6:00 PM', cron: '0 18 * * *', description: 'Evening update' }
+  ];
+  
+  const status = {
+    enabled: true,
+    timezone: 'America/Mexico_City',
+    schedules: schedules,
+    lastRun: 'Sistema iniciado recientemente',
+    nextRun: 'Calculando próxima ejecución...',
+    scraperActive: scraperProcess !== null
+  };
+  
+  res.json({ success: true, autoRAG: status });
+});
+
+// Endpoint para ejecutar RAG manualmente
+app.post("/api/rag/run-now", requireAuth, (req, res) => {
+  if (scraperProcess !== null) {
+    return res.json({
+      success: false,
+      message: "RAG scraper ya está ejecutándose"
+    });
+  }
+  
+  broadcastLog("🔄 RAG: Ejecución manual solicitada");
+  runAutoScraper('manual_api');
+  
+  res.json({
+    success: true,
+    message: "RAG scraper iniciado manualmente"
+  });
+});
 
 // Manejo de cierre del servidor
 process.on("SIGINT", () => {

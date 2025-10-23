@@ -32,10 +32,10 @@ const ENABLE_INFLUENCER =
 
 console.log("📸 IMAGE PROCESSOR INITIALIZED");
 console.log(
-  `Gemini Nano Banana: ${GEMINI_API_KEY ? "READY" : "NOT CONFIGURED ❌"}`
+  `🍌 Gemini Nano Banana: ${GEMINI_API_KEY ? "READY ✅" : "NOT CONFIGURED ❌"}`
 );
 console.log(
-  `Influencer Transform: ${ENABLE_INFLUENCER ? "ENABLED" : "DISABLED ❌"}`
+  `🎨 Influencer Transform: ${ENABLE_INFLUENCER ? "ENABLED ✅" : "DISABLED ❌"}`
 );
 
 // ====== HELPERS ======
@@ -60,7 +60,7 @@ async function cargarImage(imageName, sessionId) {
     await fs.access(imagePath); // throws if not found
     const { buffer, sizeKB } = await readBuffer(imagePath);
     console.log(
-      `[${sessionId}] Predefined image loaded: ${imagePath} (${sizeKB} KB)`
+      `✅ [${sessionId}] Predefined image loaded: ${imagePath} (${sizeKB} KB)`
     );
     return {
       buffer,
@@ -71,7 +71,7 @@ async function cargarImage(imageName, sessionId) {
     };
   } catch (err) {
     console.error(
-      `[${sessionId}] Error loading predefined image: ${err.message}`
+      `❌ [${sessionId}] Error loading predefined image: ${err.message}`
     );
     throw new Error(`Error loading image: ${err.message}`);
   }
@@ -85,7 +85,7 @@ async function cargarFotoPersonalizada(imagePath, sessionId) {
     const { buffer, sizeKB } = await readBuffer(imagePath);
     const fileName = path.basename(imagePath);
     console.log(
-      `[${sessionId}] Custom photo loaded: ${fileName} (${sizeKB} KB)`
+      `✅ [${sessionId}] Custom photo loaded: ${fileName} (${sizeKB} KB)`
     );
     return {
       buffer,
@@ -96,7 +96,7 @@ async function cargarFotoPersonalizada(imagePath, sessionId) {
     };
   } catch (err) {
     console.error(
-      `[${sessionId}] Error loading custom photo: ${err.message}`
+      `❌ [${sessionId}] Error loading custom photo: ${err.message}`
     );
     throw new Error(`Error loading custom photo: ${err.message}`);
   }
@@ -107,7 +107,7 @@ async function transformWithGemini(imagePath, sessionId) {
   if (!ai) throw new Error("Gemini client not initialized");
 
   console.log(
-    `[${sessionId}] Using Gemini 2.5 Flash Image (Nano Banana) for transformation...`
+    `🍌 [${sessionId}] Using Gemini 2.5 Flash Image (Nano Banana) for transformation...`
   );
 
   const { buffer } = await readBuffer(imagePath);
@@ -182,7 +182,7 @@ One photorealistic vertical 9:16 image of the SAME person as an elegant, profess
 
   const sizeKB = (transformedBuffer.length / 1024).toFixed(2);
   console.log(
-    `[${sessionId}] Gemini result saved: ${transformedPath} (${sizeKB} KB)`
+    `✅ [${sessionId}] Gemini result saved: ${transformedPath} (${sizeKB} KB)`
   );
 
   return {
@@ -198,7 +198,7 @@ async function transformWithOpenAI(imagePath, sessionId) {
   if (!OPENAI_API_KEY || !openai) throw new Error("OpenAI not configured");
 
   console.log(
-    `[${sessionId}] Fallback to OpenAI gpt-image-1 (image edit) ...`
+    `🖌️ [${sessionId}] Fallback to OpenAI gpt-image-1 (image edit) ...`
   );
 
   // --- Prompt tuned for identity-preserving vertical 9:16 influencer/newscaster look ---
@@ -271,7 +271,7 @@ One photorealistic vertical 9:16 image of the SAME person as an elegant news/pod
 
   const sizeKB = (transformedBuffer.length / 1024).toFixed(2);
   console.log(
-    `[${sessionId}] OpenAI result saved: ${transformedPath} (${sizeKB} KB)`
+    `✅ [${sessionId}] OpenAI result saved: ${transformedPath} (${sizeKB} KB)`
   );
 
   return {
@@ -296,7 +296,7 @@ async function transformarAInfluencer(imagePath, sessionId) {
     throw new Error("No image transformation provider configured");
   } catch (error) {
     console.error(
-      `[${sessionId}] Influencer transform failed: ${error.message}`
+      `❌ [${sessionId}] Influencer transform failed: ${error.message}`
     );
     // Fallback to original
     const { buffer } = await readBuffer(imagePath);
@@ -336,11 +336,11 @@ async function crearImageAsset(imageBuffer, imageName, sessionId) {
     if (!imageAssetId)
       throw new Error("Hedra did not return an image asset id");
 
-    console.log(`[${sessionId}] Image asset created: ${imageAssetId}`);
+    console.log(`✅ [${sessionId}] Image asset created: ${imageAssetId}`);
     return { id: imageAssetId, type: "image", name: `${imageName}.png` };
   } catch (error) {
     console.error(
-      `[${sessionId}] Error creating image asset: ${
+      `❌ [${sessionId}] Error creating image asset: ${
         error.response?.status || error.message
       }`
     );
@@ -350,7 +350,7 @@ async function crearImageAsset(imageBuffer, imageName, sessionId) {
 
 async function subirImageFile(imageBuffer, imageAssetId, imageName, sessionId) {
   try {
-    console.log(`[${sessionId}] Uploading image file to Hedra...`);
+    console.log(`📤 [${sessionId}] Uploading image file to Hedra...`);
     const formData = new FormData();
     formData.append("file", imageBuffer, {
       filename: `${imageName}.png`,
@@ -369,7 +369,7 @@ async function subirImageFile(imageBuffer, imageAssetId, imageName, sessionId) {
       }
     );
 
-    console.log(`[${sessionId}] Image file uploaded`);
+    console.log(`✅ [${sessionId}] Image file uploaded`);
     return {
       id: imageAssetId,
       type: "image",
@@ -378,7 +378,7 @@ async function subirImageFile(imageBuffer, imageAssetId, imageName, sessionId) {
     };
   } catch (error) {
     console.error(
-      `[${sessionId}] Error uploading image file: ${
+      `❌ [${sessionId}] Error uploading image file: ${
         error.response?.status || error.message
       }`
     );
@@ -389,9 +389,9 @@ async function subirImageFile(imageBuffer, imageAssetId, imageName, sessionId) {
 // ====== MAIN: procesa imagen (predefined or custom) + optional transform + Hedra ======
 async function procesarImage(imageInput, sessionId) {
   try {
-    console.log(`[${sessionId}] Starting complete image processing...`);
+    console.log(`📸 [${sessionId}] Starting complete image processing...`);
     console.log(
-      `[${sessionId}] DEBUG - imageInput: "${imageInput}" (type: ${typeof imageInput})`
+      `🔍 [${sessionId}] DEBUG - imageInput: "${imageInput}" (type: ${typeof imageInput})`
     );
 
     let imageData;
@@ -407,11 +407,11 @@ async function procesarImage(imageInput, sessionId) {
 
     if (looksLikeCustom) {
       // Custom photo flow
-      console.log(`[${sessionId}] Detected CUSTOM PHOTO: ${imageInput}`);
+      console.log(`🖼️ [${sessionId}] Detected CUSTOM PHOTO: ${imageInput}`);
       imageData = await cargarFotoPersonalizada(imageInput, sessionId);
 
       if (ENABLE_INFLUENCER) {
-        console.log(`[${sessionId}] Influencer transform ENABLED`);
+        console.log(`🎨 [${sessionId}] Influencer transform ENABLED`);
         const result = await transformarAInfluencer(
           imageData.archivo,
           sessionId
@@ -422,7 +422,7 @@ async function procesarImage(imageInput, sessionId) {
           result?.transformedPath &&
           result?.type?.startsWith("influencer_")
         ) {
-          console.log(`[${sessionId}] Transformation OK (${result.type})`);
+          console.log(`✅ [${sessionId}] Transformation OK (${result.type})`);
           finalImageBuffer = result.transformedBuffer;
           finalImagePath = result.transformedPath;
           imageData.dalleTransformation = {
@@ -433,7 +433,7 @@ async function procesarImage(imageInput, sessionId) {
             error: null,
           };
         } else {
-          console.log(`[${sessionId}] Transformation fallback to original`);
+          console.log(`⚠️ [${sessionId}] Transformation fallback to original`);
           finalImageBuffer = imageData.buffer;
           finalImagePath = imageData.archivo;
           imageData.dalleTransformation = {
@@ -445,7 +445,7 @@ async function procesarImage(imageInput, sessionId) {
           };
         }
       } else {
-        console.log(`ℹ[${sessionId}] Influencer transform DISABLED (flag)`);
+        console.log(`ℹ️ [${sessionId}] Influencer transform DISABLED (flag)`);
         finalImageBuffer = imageData.buffer;
         finalImagePath = imageData.archivo;
         imageData.dalleTransformation = {
@@ -458,7 +458,7 @@ async function procesarImage(imageInput, sessionId) {
       }
     } else {
       // Predefined SOFIA
-      console.log(`[${sessionId}] Detected PREDEFINED SOFIA: ${imageInput}`);
+      console.log(`👩 [${sessionId}] Detected PREDEFINED SOFIA: ${imageInput}`);
       imageData = await cargarImage(imageInput, sessionId);
       finalImageBuffer = imageData.buffer;
       finalImagePath = imageData.archivo;
@@ -486,10 +486,10 @@ async function procesarImage(imageInput, sessionId) {
     );
 
     console.log(
-      `[${sessionId}] Image processed for Hedra: ${imageUpload.id}`
+      `✅ [${sessionId}] Image processed for Hedra: ${imageUpload.id}`
     );
     console.log(
-      `[${sessionId}] Image type: ${String(
+      `📋 [${sessionId}] Image type: ${String(
         imageData.type || ""
       ).toUpperCase()}`
     );
@@ -514,7 +514,7 @@ async function procesarImage(imageInput, sessionId) {
       buffer: finalImageBuffer,
     };
   } catch (error) {
-    console.error(`[${sessionId}] Error in image process: ${error.message}`);
+    console.error(`❌ [${sessionId}] Error in image process: ${error.message}`);
     throw error;
   }
 }
@@ -527,10 +527,10 @@ async function verificarImagenesDisponibles() {
     const disponibles = archivos
       .filter((a) => a.toLowerCase().endsWith(".png"))
       .map((a) => a.replace(/\.png$/i, ""));
-    console.log(`Available predefined images: ${disponibles.join(", ")}`);
+    console.log(`📸 Available predefined images: ${disponibles.join(", ")}`);
     return disponibles;
   } catch (error) {
-    console.error("Error checking images:", error.message);
+    console.error("❌ Error checking images:", error.message);
     return [];
   }
 }

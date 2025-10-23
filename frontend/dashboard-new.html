@@ -748,20 +748,14 @@ Script will appear here...</pre
               if (heroImg1) heroImg1.src = modifiedImages[0];
               if (heroImg2) heroImg2.src = modifiedImages[1];
 
-              // Solo logs en desarrollo
-              if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                console.log(
-                  "✅ Hero images loaded from:",
-                  modifiedImages.slice(0, 2)
-                );
-              }
+              console.log(
+                "✅ Hero images loaded from:",
+                modifiedImages.slice(0, 2)
+              );
             }
           }
         } catch (error) {
-          // Solo logs en desarrollo
-          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            console.log("⚠️ Could not load dynamic hero images, using defaults");
-          }
+          console.log("⚠️ Could not load dynamic hero images, using defaults");
         }
       }
 
@@ -771,10 +765,7 @@ Script will appear here...</pre
 
     <!-- Test Modal Functions (Simplified) -->
     <script>
-      // Solo logs en desarrollo
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        console.log('✅ Modal system ready');
-      }
+      console.log('✅ Modal system ready');
     </script>
 
 

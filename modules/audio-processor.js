@@ -170,18 +170,18 @@ async function generarAudio(texto, sessionId, voiceType = "female") {
     // Clean + truncate
     let original = String(texto || "");
     console.log(
-      `[${sessionId}] Original text: "${safeSubstring(original, 120)}..."`
+      `🧹 [${sessionId}] Original text: "${safeSubstring(original, 120)}..."`
     );
 
     let textoLimpio = limpiarTextoParaAudio(original);
     if (textoLimpio.length > 500) {
       textoLimpio = textoLimpio.substring(0, 497) + "...";
       console.log(
-        `[${sessionId}] Text truncated to 500 chars for ElevenLabs`
+        `✂️ [${sessionId}] Text truncated to 500 chars for ElevenLabs`
       );
     }
     console.log(
-      `[${sessionId}] Clean text: "${safeSubstring(textoLimpio, 120)}..."`
+      `✅ [${sessionId}] Clean text: "${safeSubstring(textoLimpio, 120)}..."`
     );
 
     const palabras = original.split(/\s+/).filter(Boolean).length;
@@ -193,7 +193,7 @@ async function generarAudio(texto, sessionId, voiceType = "female") {
     for (const candidate of fallbacks) {
       try {
         console.log(
-          `[${sessionId}] TTS with ${candidate.name} (${candidate.id})`
+          `🔁 [${sessionId}] TTS with ${candidate.name} (${candidate.id})`
         );
         response = await axios.post(
           `https://api.elevenlabs.io/v1/text-to-speech/${candidate.id}`,
@@ -218,12 +218,12 @@ async function generarAudio(texto, sessionId, voiceType = "female") {
           }
         );
         selectedVoice = candidate;
-        console.log(`[${sessionId}] TTS OK with ${candidate.name}`);
+        console.log(`✅ [${sessionId}] TTS OK with ${candidate.name}`);
         break;
       } catch (err) {
         lastError = err;
         console.log(
-          `[${sessionId}] ElevenLabs failed ${candidate.name}: ${
+          `❌ [${sessionId}] ElevenLabs failed ${candidate.name}: ${
             err.response?.status || err.message
           }`
         );
@@ -254,7 +254,7 @@ async function generarAudio(texto, sessionId, voiceType = "female") {
     const audioBuffer = Buffer.from(response.data);
     await fs.writeFile(audioFile, audioBuffer);
 
-    console.log(`[${sessionId}] Audio saved: ${audioFile}`);
+    console.log(`💾 [${sessionId}] Audio saved: ${audioFile}`);
 
     // Duration placeholder (mantengo 20 como en tu flujo si dependes de ello)
     const duracion = 20;
@@ -271,7 +271,7 @@ async function generarAudio(texto, sessionId, voiceType = "female") {
     };
   } catch (error) {
     console.error(
-      `[${sessionId}] Error generating audio:`,
+      `❌ [${sessionId}] Error generating audio:`,
       error.response?.status || error.message
     );
     throw new Error(`Error generando audio: ${error.message}`);
@@ -315,7 +315,7 @@ async function crearAudioAsset(audioBuffer, sessionId) {
     };
   } catch (error) {
     console.error(
-      `[${sessionId}] Error creating audio asset:`,
+      `❌ [${sessionId}] Error creating audio asset:`,
       error.response?.status || error.message
     );
     throw new Error(`Error creando audio asset: ${error.message}`);
@@ -349,7 +349,7 @@ async function subirAudioFile(audioBuffer, audioAssetId, sessionId) {
       }
     );
 
-    console.log(`[${sessionId}] Hedra upload OK`);
+    console.log(`✅ [${sessionId}] Hedra upload OK`);
 
     return {
       id: audioAssetId,
@@ -359,7 +359,7 @@ async function subirAudioFile(audioBuffer, audioAssetId, sessionId) {
     };
   } catch (error) {
     console.error(
-      `[${sessionId}] Error uploading audio:`,
+      `❌ [${sessionId}] Error uploading audio:`,
       error.response?.status || error.message
     );
     throw new Error(`Error subiendo audio file: ${error.message}`);
@@ -371,7 +371,7 @@ async function procesarAudio(texto, sessionId, voiceType = "female") {
   ensureEnv();
 
   try {
-    console.log(`[${sessionId}] AUDIO PIPELINE START`);
+    console.log(`🚀 [${sessionId}] AUDIO PIPELINE START`);
 
     const audioData = await generarAudio(texto, sessionId, voiceType);
     const audioAsset = await crearAudioAsset(audioData.buffer, sessionId);
@@ -404,7 +404,7 @@ async function procesarAudio(texto, sessionId, voiceType = "female") {
       uploaded: audioUpload.uploaded === true,
     };
   } catch (error) {
-    console.error(`[${sessionId}] Audio pipeline error: ${error.message}`);
+    console.error(`❌ [${sessionId}] Audio pipeline error: ${error.message}`);
     throw error;
   }
 }

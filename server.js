@@ -8,18 +8,39 @@ const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 
+// ============================================================================
+// RAILWAY OPTIMIZATION - Memory and process management
+// ============================================================================
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err.message);
+  // Don't exit on Railway - just log
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit on Railway - just log
+});
+
+// Memory management for Railway
+if (process.env.NODE_ENV === 'production') {
+  setInterval(() => {
+    if (global.gc) {
+      global.gc();
+    }
+  }, 30000); // Force garbage collection every 30 seconds
+}
+
 // IMPORTAR SISTEMA DE AUTENTICACIÓN
 const {
   requireAuth,
   requireAdmin,
-  validarCredenciales,  // 🇪🇸 VOLVEMOS AL ESPAÑOL
-  crearUser,           // 🇪🇸 VOLVEMOS AL ESPAÑOL  
-  listarUsers,         // 🇪🇸 VOLVEMOS AL ESPAÑOL
-  verificarToken,      // 🇪🇸 VOLVEMOS AL ESPAÑOL
+  validarCredenciales,
+  crearUser,
+  listarUsers,
 } = require("./modules/auth-manager"); // NUEVO
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Configurar multer para uploads
 const storage = multer.diskStorage({
@@ -71,7 +92,7 @@ app.use(express.static("."));
 // Voices endpoint (fills the <select id="voiceSelect"> in the dashboard)
 app.get('/api/voices', (req, res) => {
   try {
-    const { getAvailableVoices } = require('./audio-processor'); // <- ruta correcta en tu repo
+    const { getAvailableVoices } = require('./modules/audio-processor'); // <- ruta correcta en tu repo
     const voices = getAvailableVoices(); // [{ key, name, id }]
     return res.json({ success: true, voices });
   } catch (e) {
@@ -256,7 +277,7 @@ app.post("/api/scraper/start", requireAuth, (req, res) => {
       .toString()
       .split("\n")
       .filter((line) => line.trim());
-    lines.forEach((line) => broadcastLog(`${line}`));
+    lines.forEach((line) => broadcastLog(`📰 ${line}`));
   });
 
   scraperProcess.stderr.on("data", (data) => {
@@ -657,7 +678,7 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       "💡 El sistema esperará 3 minutes y luego verificará 8 veces (total ~7 min)"
     );
     broadcastLog(
-      '📊 Si Hedra está lento, el sistema intentará descargar manualmente'
+      '📊 Si Hedra está lento, el sistema intentará descargar "a la mala"'
     );
 
     // PASO 3: Crear video final
@@ -962,7 +983,7 @@ app.get("/api/news/carousel", async (req, res) => {
       now - carouselNewsCache.lastUpdate < carouselNewsCache.CACHE_DURATION
     ) {
       console.log(
-        `[Carousel] Returning cached news (age: ${Math.floor(
+        `📰 [Carousel] Returning cached news (age: ${Math.floor(
           (now - carouselNewsCache.lastUpdate) / 1000 / 60
         )} minutes)`
       );
@@ -978,7 +999,7 @@ app.get("/api/news/carousel", async (req, res) => {
 
     // Cache expirado o vacío - buscar noticias nuevas
     console.log(
-      `[Carousel] Cache expired/empty - fetching fresh news from RAG`
+      `📰 [Carousel] Cache expired/empty - fetching fresh news from RAG`
     );
 
     const { createClient } = require("@supabase/supabase-js");
@@ -1080,7 +1101,7 @@ app.get("/api/news/carousel", async (req, res) => {
             },
           ];
 
-          console.log(`[Carousel] Using demo news for ${countryCode}`);
+          console.log(`📰 [Carousel] Using demo news for ${countryCode}`);
         }
 
         // FILTRAR chunks incompletos + VALIDAR que correspondan al país correcto
@@ -1186,7 +1207,7 @@ app.get("/api/news/carousel", async (req, res) => {
           const actualSource = metadata.source || "Unknown";
           const actualLink = metadata.link || "No link";
           console.log(
-            `[Carousel] Adding ${countryCode} news: "${
+            `📰 [Carousel] Adding ${countryCode} news: "${
               metadata.title || "No title"
             }" from ${actualSource} (${actualLink})`
           );
@@ -1598,7 +1619,8 @@ app.get("/", (req, res) => {
     return res.redirect("/login.html");
   }
 
-  // Verificar token (función en español)
+  // Verificar token
+  const { verificarToken } = require("./modules/auth-manager");
   const verification = verificarToken(token);
 
   if (!verification.success) {
@@ -1648,70 +1670,7 @@ app.listen(PORT, () => {
   
   // Iniciar watcher de videos
   setupVideoWatcher();
-  
-  // Iniciar scraper automático cada 4 horas
-  setupAutoScraper();
 });
-
-// ============================================================================
-// AUTO SCRAPER - Ejecutar cada 4 horas automáticamente
-// ============================================================================
-function setupAutoScraper() {
-  console.log('🤖 Setting up automatic scraper (every 4 hours)...');
-  
-  // Ejecutar inmediatamente al iniciar (opcional)
-  setTimeout(() => {
-    runScraper('auto_startup');
-  }, 30000); // 30 segundos después del inicio
-  
-  // Configurar intervalo cada 4 horas (4 * 60 * 60 * 1000 = 14400000 ms)
-  const FOUR_HOURS = 4 * 60 * 60 * 1000;
-  
-  setInterval(() => {
-    runScraper('auto_scheduled');
-  }, FOUR_HOURS);
-  
-  console.log('✅ Auto scraper scheduled - will run every 4 hours');
-  broadcastLog('🤖 Auto scraper configurado - cada 4 horas');
-}
-
-function runScraper(source = 'manual') {
-  // Verificar si ya hay un scraper ejecutándose
-  if (scraperProcess) {
-    console.log('⚠️ Scraper already running, skipping...');
-    return;
-  }
-  
-  const timestamp = new Date().toLocaleString();
-  console.log(`🚀 [${timestamp}] Starting auto scraper (${source})...`);
-  broadcastLog(`🚀 Auto scraper iniciado (${source})`);
-  
-  scraperProcess = spawn("node", ["scraper-4-paises-final.js"], {
-    stdio: "pipe",
-  });
-
-  scraperProcess.stdout.on("data", (data) => {
-    const message = data.toString().trim();
-    console.log(`[SCRAPER] ${message}`);
-    broadcastLog(`${message}`);
-  });
-
-  scraperProcess.stderr.on("data", (data) => {
-    console.error(`[SCRAPER ERROR] ${data}`);
-  });
-
-  scraperProcess.on("close", (code) => {
-    const timestamp = new Date().toLocaleString();
-    if (code === 0) {
-      console.log(`✅ [${timestamp}] Auto scraper completed successfully`);
-      broadcastLog("✅ Auto scraper completado exitosamente");
-    } else {
-      console.log(`❌ [${timestamp}] Auto scraper failed with code: ${code}`);
-      broadcastLog(`❌ Auto scraper falló con código: ${code}`);
-    }
-    scraperProcess = null;
-  });
-}
 
 // ============================================================================
 // FILE WATCHER - Detectar videos nuevos automáticamente

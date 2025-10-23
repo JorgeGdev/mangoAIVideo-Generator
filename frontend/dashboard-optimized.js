@@ -2,24 +2,15 @@
 // DASHBOARD OPTIMIZED - SINGLE INITIALIZATION
 // ============================================
 
-// 🔒 PRODUCTION LOGGING SYSTEM
-const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const logger = {
-  log: (...args) => isDevelopment && logger.log(...args),
-  warn: (...args) => isDevelopment && console.warn(...args),
-  error: (...args) => console.error(...args), // Errores siempre se muestran
-  info: (...args) => isDevelopment && console.info(...args)
-};
-
 let eventSource = null;
 let currentSessionId = null;
 let isInitialized = false;
 
 // Prevent multiple initializations
 if (isInitialized) {
-  logger.log('Dashboard already initialized');
+  console.log('Dashboard already initialized');
 } else {
-  logger.log('🚀 Initializing Dashboard...');
+  console.log('🚀 Initializing Dashboard...');
   isInitialized = true;
 }
 
@@ -39,7 +30,7 @@ let carouselState = {
 // ============================================================================
 async function fetchCarouselNews() {
   try {
-    logger.log("[Carousel] Fetching news...");
+    console.log("📰 [Carousel] Fetching news...");
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
@@ -58,7 +49,7 @@ async function fetchCarouselNews() {
     
     if (result.success && result.news.length > 0) {
       carouselState.news = result.news;
-      logger.log(`✅ [Carousel] Loaded ${result.news.length} news items`);
+      console.log(`✅ [Carousel] Loaded ${result.news.length} news items`);
       initializeCarousel();
     } else {
       console.error("❌ [Carousel] No news available");
@@ -78,7 +69,7 @@ function initializeCarousel() {
   const dotsContainer = document.getElementById("carouselDots");
 
   if (!slidesContainer || !dotsContainer) {
-    logger.log("⚠️ [Carousel] Elements not found");
+    console.log("⚠️ [Carousel] Elements not found");
     return;
   }
 
@@ -219,7 +210,7 @@ function showCarouselError() {
           <div class="carousel-overlay"></div>
           <div class="carousel-content">
             <div class="carousel-loader">
-              <p>Loading latest news...</p>
+              <p>📰 Loading latest news...</p>
               <p style="font-size: 0.9rem; opacity: 0.8;">Connecting to news sources...</p>
             </div>
           </div>
@@ -275,7 +266,7 @@ function conectarLogs() {
     if (data.type === 'script_approval') {
       // guarda session para aprobar/rechazar rápido con los botones inline (si los usas)
       currentSessionId = data.sessionId;
-      logger.log('[SSE] script_approval', data);
+      console.log('[SSE] script_approval', data);
 
       if (window.Modals && typeof window.Modals.showApprovalDialog === 'function') {
         window.Modals.showApprovalDialog(data.sessionId, data.script, data.query);
@@ -287,20 +278,20 @@ function conectarLogs() {
 
     // 3) COMPARACIÓN DE IMAGEN: mostrar bloque
     if (data.type === 'image_comparison') {
-      logger.log('[SSE] image_comparison', data);
+      console.log('[SSE] image_comparison', data);
       mostrarComparacionImagenes(data.originalPath, data.transformedPath);
       return;
     }
 
     // 4) VIDEO COMPLETADO: abrir diálogo
     if (data.type === 'video_completion') {
-      logger.log('🎬 Video completion received:', data);
-      logger.log('🎬 isSubtitled:', data.isSubtitled);
-      logger.log('🎬 Modal system available:', !!window.Modals);
+      console.log('🎬 Video completion received:', data);
+      console.log('🎬 isSubtitled:', data.isSubtitled);
+      console.log('🎬 Modal system available:', !!window.Modals);
       
       // Check if this is the subtitled version (FINAL step)
       if (data.isSubtitled) {
-        logger.log('� SUBTITLED VIDEO ARRIVED - Showing success message!');
+        console.log('� SUBTITLED VIDEO ARRIVED - Showing success message!');
         
         // Update to final step and show success message
         if (window.Modals && window.Modals.showSubtitledVideoComplete) {
@@ -314,7 +305,7 @@ function conectarLogs() {
         }
       } else {
         // This is the normal video (first one) - just show it, no success message yet
-        logger.log('📹 Normal video arrived - waiting for subtitled version...');
+        console.log('📹 Normal video arrived - waiting for subtitled version...');
         
         // Update to step 4 (creating video complete, but not final yet)
         if (window.Modals && window.Modals.updateProgressStep) {
@@ -324,7 +315,7 @@ function conectarLogs() {
         // Show the video in modal
         setTimeout(() => {
           if (window.Modals && typeof window.Modals.showVideoDialog === 'function') {
-            logger.log('🎬 Opening video modal...');
+            console.log('🎬 Opening video modal...');
             window.Modals.showVideoDialog(data);
           } else {
             console.error('❌ Modal system not available');
@@ -338,7 +329,7 @@ function conectarLogs() {
   };
 
   eventSource.onerror = function() {
-    logger.log('Log connection error');
+    console.log('Log connection error');
   };
 }
 
@@ -354,9 +345,9 @@ function mostrarComparacionImagenes(originalPath, transformedPath) {
     return;
   }
   
-  logger.log('📷 Setting image comparison:');
-  logger.log('   Original:', originalPath);
-  logger.log('   Transformed:', transformedPath);
+  console.log('📷 Setting image comparison:');
+  console.log('   Original:', originalPath);
+  console.log('   Transformed:', transformedPath);
   
   originalImg.src = originalPath || '';
   transformedImg.src = transformedPath || '';
@@ -364,7 +355,7 @@ function mostrarComparacionImagenes(originalPath, transformedPath) {
   
   // Force update progress modal image comparison if it's open
   if (window.Modals && window.Modals.forceUpdateImageComparison) {
-    logger.log('🔄 Updating progress modal image comparison...');
+    console.log('🔄 Updating progress modal image comparison...');
     window.Modals.forceUpdateImageComparison();
   }
 }
@@ -393,7 +384,7 @@ async function actualizarEstadisticas() {
     updateStatElement('successRate', stats.exito || '0%');
     
   } catch (error) {
-    logger.log('Stats update error:', error.message);
+    console.log('Stats update error:', error.message);
   }
 }
 
@@ -416,7 +407,7 @@ async function verificarAuth() {
       window.location.href = '/login.html';
     }
   } catch (error) {
-    logger.log('Auth check error');
+    console.log('Auth check error');
   }
 }
 
@@ -440,7 +431,7 @@ async function ejecutarScraper() {
     const result = await response.json();
     
     if (result.success) {
-      logger.log('✅ Scraper started');
+      console.log('✅ Scraper started');
     }
   } catch (error) {
     console.error('❌ Scraper error:', error);
@@ -544,7 +535,7 @@ async function generarVideoManual() {
 
     if (result.success) {
       currentSessionId = result.sessionId;
-      logger.log("✅ Video generation started");
+      console.log("✅ Video generation started");
     } else {
       alert("Error: " + result.message);
     }
@@ -574,7 +565,7 @@ async function aprobarScript() {
     const result = await response.json();
 
     if (result.success) {
-      logger.log("✅ Script approved");
+      console.log("✅ Script approved");
     } else {
       alert("Error: " + result.message);
     }
@@ -597,7 +588,7 @@ async function rechazarScript() {
     const result = await response.json();
 
     if (result.success) {
-      logger.log("✅ Script rejected");
+      console.log("✅ Script rejected");
       currentSessionId = null;
     }
   } catch (error) {
@@ -624,7 +615,7 @@ async function limpiarLogs() {
 // Clear carousel cache and refresh news
 async function limpiarCacheCarousel() {
   try {
-    logger.log('🔄 Clearing carousel cache and fetching fresh news...');
+    console.log('🔄 Clearing carousel cache and fetching fresh news...');
     
     // Clear cache on server
     await fetch('/api/news/clear-cache', { method: 'POST' });
@@ -632,7 +623,7 @@ async function limpiarCacheCarousel() {
     // Fetch fresh news
     await fetchCarouselNews();
     
-    logger.log('✅ Carousel refreshed with improved filters');
+    console.log('✅ Carousel refreshed with improved filters');
   } catch (error) {
     console.error('❌ Carousel refresh error:', error);
   }
@@ -717,7 +708,7 @@ async function logout() {
 // ============================================================================
 async function loadShowcaseVideos() {
   try {
-    logger.log('📹 [Showcase] Loading videos (original + subtitled)...');
+    console.log('📹 [Showcase] Loading videos (original + subtitled)...');
     
     const response = await fetch('/api/videos/combined');
     const result = await response.json();
@@ -729,9 +720,9 @@ async function loadShowcaseVideos() {
       
       displayShowcaseVideos(randomVideos);
       
-      logger.log(`✅ [Showcase] Loaded ${result.stats?.total || result.videos.length} total videos (${result.stats?.original || 0} original, ${result.stats?.subtitled || 0} subtitled)`);
+      console.log(`✅ [Showcase] Loaded ${result.stats?.total || result.videos.length} total videos (${result.stats?.original || 0} original, ${result.stats?.subtitled || 0} subtitled)`);
     } else {
-      logger.log('⚠️ [Showcase] No videos found, showing placeholder');
+      console.log('⚠️ [Showcase] No videos found, showing placeholder');
       showShowcasePlaceholder();
     }
   } catch (error) {
@@ -770,7 +761,7 @@ function displayShowcaseVideos(videos) {
     showcaseGrid.appendChild(videoCard);
   });
   
-  logger.log(`✅ [Showcase] Displayed ${videos.length} videos`);
+  console.log(`✅ [Showcase] Displayed ${videos.length} videos`);
 }
 
 function showShowcasePlaceholder() {
@@ -796,7 +787,7 @@ function showShowcasePlaceholder() {
 
 
 document.addEventListener('DOMContentLoaded', function() {
-  logger.log('🚀 Dashboard loading...');
+  console.log('🚀 Dashboard loading...');
   
   // Initialize core functions
   verificarAuth();
@@ -814,7 +805,7 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarEstadisticas();
   }, 10000);
   
-  logger.log('✅ Dashboard ready');
+  console.log('✅ Dashboard ready');
 });
 
 // Cleanup on page unload

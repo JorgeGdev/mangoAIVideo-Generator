@@ -1,1 +1,1 @@
-web: node --max-old-space-size=512 server.js
+web: node --max-old-space-size=512 --optimize-for-size server.js

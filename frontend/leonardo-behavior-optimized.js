@@ -2,22 +2,13 @@
 // LEONARDO BEHAVIOR OPTIMIZED
 // ============================================
 
-// 🔒 PRODUCTION LOGGING SYSTEM
-const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const logger = {
-  log: (...args) => isDevelopment && logger.log(...args),
-  warn: (...args) => isDevelopment && console.warn(...args),
-  error: (...args) => console.error(...args), // Errores siempre se muestran
-  info: (...args) => isDevelopment && console.info(...args)
-};
-
 let isLeonardoInitialized = false;
 
 document.addEventListener('DOMContentLoaded', function() {
   if (isLeonardoInitialized) return;
   isLeonardoInitialized = true;
   
-  logger.log('🎨 Leonardo behavior initialized');
+  console.log('🎨 Leonardo behavior initialized');
   
   // Header shrink effect (throttled)
   let ticking = false;
@@ -56,5 +47,5 @@ document.addEventListener('DOMContentLoaded', function() {
   
   setTimeout(initShowcaseLoader, 1000);
   
-  logger.log('✅ Leonardo behavior ready');
+  console.log('✅ Leonardo behavior ready');
 });

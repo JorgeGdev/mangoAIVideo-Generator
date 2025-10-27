@@ -2178,9 +2178,20 @@ let autoRAGStatus = {
 
 function setupAutoRAG() {
   console.log('📅 Setting up automatic RAG scraper...');
-  console.log('⏰ Scraper will run at: 06:00, 10:00, 14:00, 18:00 daily');
+  console.log('⏰ Scraper will run at: 06:00, 10:00, 14:00, 18:00 daily (Mexico City time)');
+  
+  // Verificar timezone actual
+  const currentTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  console.log(`🌍 Current system timezone: ${currentTZ}`);
+  
+  // Si estamos en Railway/Production, asegurar que el timezone esté configurado
+  if (process.env.NODE_ENV === 'production' && !process.env.TZ) {
+    process.env.TZ = 'America/Mexico_City';
+    console.log('🔧 Setting TZ environment variable for Railway');
+  }
   
   // Configurar horarios específicos: 6:00 AM, 10:00 AM, 2:00 PM, 6:00 PM
+  // IMPORTANTE: Estos horarios son en la zona horaria configurada (Mexico City)
   const schedules = [
     { time: '0 6 * * *', name: '06:00', hour: 6 },   // 6:00 AM todos los días
     { time: '0 10 * * *', name: '10:00', hour: 10 }, // 10:00 AM todos los días  
@@ -2191,7 +2202,15 @@ function setupAutoRAG() {
   // Configurar cada tarea programada
   schedules.forEach(schedule => {
     const task = cron.schedule(schedule.time, () => {
+      const now = new Date();
+      const currentHourMX = now.toLocaleString('es-MX', { 
+        timeZone: 'America/Mexico_City', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      
       console.log(`🕐 AUTO RAG: Iniciando actualización programada a las ${schedule.name}`);
+      console.log(`🕐 Hora actual México: ${currentHourMX}, Hora sistema: ${now.toLocaleTimeString()}`);
       broadcastLog(`🕐 AUTO RAG: Actualización programada iniciada (${schedule.name})`);
       
       // Actualizar stats
@@ -2201,20 +2220,30 @@ function setupAutoRAG() {
       // Ejecutar scraper
       runAutoScraper(`scheduled_${schedule.name}`, schedule.name);
     }, {
-      timezone: "America/Mexico_City" // Zona horaria México
+      timezone: "America/Mexico_City", // Zona horaria México
+      scheduled: true
     });
     
     console.log(`✅ Programado RAG automático: ${schedule.name} hrs (${schedule.time})`);
+    console.log(`   Cron timezone: America/Mexico_City`);
   });
   
   // Calcular próxima ejecución
   calculateNextRun(schedules);
   
-  broadcastLog(`📅 RAG automático configurado: 06:00, 10:00, 14:00, 18:00 hrs`);
+  broadcastLog(`📅 RAG automático configurado: 06:00, 10:00, 14:00, 18:00 hrs (México)`);
   broadcastLog(`🌍 Zona horaria: America/Mexico_City`);
   broadcastLog(`⚡ El scraper manual sigue disponible en el dashboard`);
   console.log('🎯 Automatic RAG scraper configured successfully');
   console.log('💡 Manual scraper button remains functional');
+  
+  // Log de verificación de horarios
+  console.log('\n📋 VERIFICACIÓN DE HORARIOS:');
+  const now = new Date();
+  console.log(`🕐 Hora actual del sistema: ${now.toLocaleString()}`);
+  console.log(`🇲🇽 Hora actual México: ${now.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}`);
+  console.log(`🌍 UTC: ${now.toISOString()}`);
+  console.log('');
 }
 
 // Calcular próxima ejecución programada

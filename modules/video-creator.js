@@ -270,31 +270,6 @@ async function descargarVideo(videoUrl, sessionId) {
       console.error(`[${sessionId}] Subtitle error (non-fatal):`, subtitleError);
     }
 
-    // 🎵 NUEVO: Generar automáticamente subtítulos
-    let subtitledVideoInfo = null;
-    try {
-      await logAndNotify(sessionId, "🎵 Starting automatic subtitle generation...");
-      
-      // Importar el procesador de subtítulos
-      const { processVideoSubtitles } = require('./subtitle-processor');
-      
-      // Procesar subtítulos de manera no bloqueante
-      subtitledVideoInfo = await processVideoSubtitles(videoPath, sessionId);
-      
-      await logAndNotify(
-        sessionId,
-        `✅ Subtitled video created: ${subtitledVideoInfo.subtitledVideoName} (${subtitledVideoInfo.size})`
-      );
-      
-    } catch (subtitleError) {
-      await logAndNotify(
-        sessionId,
-        `⚠️ Warning: Could not generate subtitles: ${subtitleError.message}`
-      );
-      // No fallar todo el proceso por un error de subtítulos
-      console.error(`[${sessionId}] Subtitle error (non-fatal):`, subtitleError);
-    }
-
     return {
       archivo: videoPath,
       nameArchivo: nameVideo,

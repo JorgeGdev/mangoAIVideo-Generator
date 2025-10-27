@@ -478,6 +478,16 @@ async function scraperRAGCompleto4Paises() {
 console.log('AI VIDEO GENERATOR');
 console.log('Creating/updating RAG with international news articles');
 console.log('New Zealand + Australia + United Kingdom + USA');
+console.log(`Node version: ${process.version}`);
+console.log(`Platform: ${process.platform}`);
+
+// Verificar compatibilidad de Node.js
+const nodeMajorVersion = parseInt(process.version.split('.')[0].substring(1));
+if (nodeMajorVersion < 20) {
+  console.error('⚠️  WARNING: Node.js version is below 20. This may cause compatibility issues.');
+  console.error('⚠️  Recommended: Node.js v20 or higher');
+  console.error('⚠️  Current version:', process.version);
+}
 
 scraperRAGCompleto4Paises()
   .then((result) => {
@@ -487,7 +497,22 @@ scraperRAGCompleto4Paises()
     console.log(`multi-country RAG operational`);
     console.log(`N8N OFFICIALLY REPLACED!`);
     console.log(`Summary sent to Telegram`);
+    process.exit(0);
   })
   .catch(error => {
     console.error('\n❌ ERROR:', error.message);
+    console.error('Stack trace:', error.stack);
+    
+    // Diagnóstico específico para errores comunes
+    if (error.message.includes('File is not defined')) {
+      console.error('\n🔧 DIAGNOSTIC: This error is caused by incompatible Node.js version');
+      console.error('🔧 SOLUTION: Update to Node.js v20 or higher');
+      console.error('🔧 Current version:', process.version);
+    } else if (error.message.includes('fetch')) {
+      console.error('\n🔧 DIAGNOSTIC: Fetch API error - check network connection');
+    } else if (error.message.includes('SUPABASE')) {
+      console.error('\n🔧 DIAGNOSTIC: Supabase connection error - check credentials');
+    }
+    
+    process.exit(1);
   });

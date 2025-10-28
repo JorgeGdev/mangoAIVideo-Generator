@@ -207,37 +207,42 @@
     const originalImg = Q('originalImage');
     const transformedImg = Q('transformedImage');
     
-    if (originalImg && transformedImg && cache.progressOriginalImage && cache.progressTransformedImage) {
-      // Only update if the main images have real content (not empty or default)
-      const originalSrc = originalImg.src;
-      const transformedSrc = transformedImg.src;
-      
-      // Check if main comparison has real images loaded (not default ones)
-      if (originalSrc && transformedSrc && 
-          !originalSrc.includes('before.png') && 
-          !originalSrc.includes('after.png') &&
-          originalSrc !== '' && transformedSrc !== '') {
-        
-        // Copy real image sources
-        cache.progressOriginalImage.src = originalSrc;
-        cache.progressTransformedImage.src = transformedSrc;
-        
-        // Show the progress comparison
-        cache.progressImageComparison.style.display = 'block';
-        
-        console.log('✅ REAL images copied to progress modal:');
-        console.log('   Original:', originalSrc);
-        console.log('   Transformed:', transformedSrc);
-      } else {
-        console.log('🔄 Main comparison still has default/empty images, keeping defaults in modal');
-        // Keep showing the comparison with default images
-        cache.progressImageComparison.style.display = 'block';
+    // TAMBIÉN intentar obtener la imagen del preview (la que subió el usuario)
+    const previewImg = Q('previewImage');
+    
+    if (cache.progressOriginalImage && cache.progressTransformedImage) {
+      // PRIORIDAD 1: Si hay imagen en el preview (foto subida por el usuario), usarla
+      if (previewImg && previewImg.src && previewImg.style.display !== 'none') {
+        console.log('📷 Using preview image as original source');
+        cache.progressOriginalImage.src = previewImg.src;
       }
-    } else {
-      console.log('⚠️ Image elements not found, keeping defaults');
-      // Keep showing the comparison with default images
-      if (cache.progressImageComparison) {
-        cache.progressImageComparison.style.display = 'block';
+      // PRIORIDAD 2: Si no, usar la imagen de la comparación principal
+      else if (originalImg && originalImg.src) {
+        const originalSrc = originalImg.src;
+        
+        // Verificar que no sea imagen por defecto
+        if (originalSrc && !originalSrc.includes('before.png') && originalSrc !== '') {
+          console.log('📷 Using main comparison original image');
+          cache.progressOriginalImage.src = originalSrc;
+        }
+      }
+      
+      // IMAGEN TRANSFORMADA: Siempre de la comparación principal
+      if (transformedImg && transformedImg.src) {
+        const transformedSrc = transformedImg.src;
+        
+        // Verificar que no sea imagen por defecto
+        if (transformedSrc && !transformedSrc.includes('after.png') && transformedSrc !== '') {
+          console.log('📷 Using main comparison transformed image');
+          cache.progressTransformedImage.src = transformedSrc;
+          
+          // Si tenemos imagen transformada real, mostrar la comparación
+          cache.progressImageComparison.style.display = 'block';
+          
+          console.log('✅ Images copied to progress modal:');
+          console.log('   Original:', cache.progressOriginalImage.src);
+          console.log('   Transformed:', cache.progressTransformedImage.src);
+        }
       }
     }
   }
@@ -265,19 +270,25 @@
       
       // Set default images if no images are loaded yet
       if (cache.progressOriginalImage && cache.progressTransformedImage) {
-        // Use before.png and after.png as defaults
-        cache.progressOriginalImage.src = '/images/before.png';
-        cache.progressTransformedImage.src = '/images/after.png';
+        // Use before.png and after.png as defaults (sin / al inicio para consistencia)
+        cache.progressOriginalImage.src = 'images/before.png';
+        cache.progressTransformedImage.src = 'images/after.png';
         console.log('📷 Default images loaded:');
-        console.log('   Original: /images/before.png');
-        console.log('   Transformed: /images/after.png');
+        console.log('   Original: images/before.png');
+        console.log('   Transformed: images/after.png');
         
         // Add error handlers to check if images load
         cache.progressOriginalImage.onerror = function() {
-          console.error('❌ Failed to load original default image');
+          console.error('❌ Failed to load original default image: images/before.png');
+          console.error('   Trying absolute path...');
+          // Fallback: try absolute path
+          this.src = '/images/before.png';
         };
         cache.progressTransformedImage.onerror = function() {
-          console.error('❌ Failed to load transformed default image');
+          console.error('❌ Failed to load transformed default image: images/after.png');
+          console.error('   Trying absolute path...');
+          // Fallback: try absolute path
+          this.src = '/images/after.png';
         };
         
         cache.progressOriginalImage.onload = function() {

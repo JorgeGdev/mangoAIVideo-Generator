@@ -198,93 +198,93 @@ async function verificarStatusVideo(generationId, sessionId) {
 
 // ====== DOWNLOAD FINAL VIDEO ======
 async function descargarVideo(videoUrl, sessionId) {
-  try {
-    await logAndNotify(sessionId, "📥 Downloading final video...");
-
-    const response = await axios.get(videoUrl, {
-      responseType: "arraybuffer",
-      timeout: 120000,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      },
-    });
-
-    if (!response.data || response.data.byteLength === 0) {
-      throw new Error("Downloaded video is empty");
-    }
-
-    await logAndNotify(
-      sessionId,
-      `📊 Video bytes: ${response.data.byteLength}`
-    );
-
-    const now = new Date();
-    const fecha = now.toISOString().slice(0, 10).replace(/-/g, "");
-    const hora = now.toTimeString().slice(0, 8).replace(/:/g, "");
-    const nameVideo = `video_${fecha}_${hora}.mp4`;
-
-    // RAILWAY COMPATIBLE: Use storage config
-    const videoDir = STORAGE_CONFIG.videos;
-    await fs.mkdir(videoDir, { recursive: true });
-    const videoPath = path.join(videoDir, nameVideo);
-
-    await fs.writeFile(videoPath, Buffer.from(response.data));
-
-    const stats = await fs.stat(videoPath);
-    const videoSize = (stats.size / (1024 * 1024)).toFixed(2);
-
-    await logAndNotify(
-      sessionId,
-      `✅ Video saved: ${videoPath} (${videoSize} MB)`
-    );
-    await logAndNotify(sessionId, `🔍 File verified: ${stats.size} bytes`);
-    
-    if (isRailway) {
-      await logAndNotify(sessionId, "🚂 Railway: Video stored in temporary location");
-      await logAndNotify(sessionId, "💾 Auto-download will be triggered after completion");
-    }
-
-    // 🎵 NUEVO: Generar automáticamente subtítulos
-    let subtitledVideoInfo = null;
+  const MAX_DOWNLOAD_RETRIES = 3;
+  let attempt = 0;
+  
+  while (attempt < MAX_DOWNLOAD_RETRIES) {
     try {
-      await logAndNotify(sessionId, "🎵 Starting automatic subtitle generation...");
-      
-      // Importar el procesador de subtítulos
-      const { processVideoSubtitles } = require('./subtitle-processor');
-      
-      // Procesar subtítulos de manera no bloqueante
-      subtitledVideoInfo = await processVideoSubtitles(videoPath, sessionId);
-      
-      await logAndNotify(
-        sessionId,
-        `✅ Subtitled video created: ${subtitledVideoInfo.subtitledVideoName} (${subtitledVideoInfo.size})`
-      );
-      
-    } catch (subtitleError) {
-      await logAndNotify(
-        sessionId,
-        `⚠️ Warning: Could not generate subtitles: ${subtitleError.message}`
-      );
-      // No fallar todo el proceso por un error de subtítulos
-      console.error(`[${sessionId}] Subtitle error (non-fatal):`, subtitleError);
-    }
+      attempt++;
+      await logAndNotify(sessionId, `📥 Downloading final video (attempt ${attempt}/${MAX_DOWNLOAD_RETRIES})...`);
 
-    return {
-      archivo: videoPath,
-      nameArchivo: nameVideo,
-      tamaño: `${videoSize} MB`,
-      buffer: Buffer.from(response.data),
-      url: videoUrl,
-      subtitles: subtitledVideoInfo // Información de subtítulos si se generaron
-    };
-  } catch (error) {
-    await logAndNotify(
-      sessionId,
-      `❌ Error downloading video: ${error.message}`
-    );
-    throw error;
+      const response = await axios.get(videoUrl, {
+        responseType: "arraybuffer",
+        timeout: 180000, // 3 minutos - más tiempo para Railway
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "*/*",
+          "Accept-Encoding": "gzip, deflate, br"
+        },
+        maxRedirects: 5,
+        validateStatus: (status) => status < 400 // Aceptar redirects
+      });
+
+      if (!response.data || response.data.byteLength === 0) {
+        throw new Error("Downloaded video is empty");
+      }
+
+      await logAndNotify(
+        sessionId,
+        `📊 Video downloaded successfully: ${response.data.byteLength} bytes`
+      );
+
+      // Si llegamos aquí, la descarga fue exitosa - procesar y guardar
+      const now = new Date();
+      const fecha = now.toISOString().slice(0, 10).replace(/-/g, "");
+      const hora = now.toTimeString().slice(0, 8).replace(/:/g, "");
+      const nameVideo = `video_${fecha}_${hora}.mp4`;
+
+      // RAILWAY COMPATIBLE: Use storage config
+      const videoDir = STORAGE_CONFIG.videos;
+      await fs.mkdir(videoDir, { recursive: true });
+      const videoPath = path.join(videoDir, nameVideo);
+
+      await fs.writeFile(videoPath, Buffer.from(response.data));
+
+      const stats = await fs.stat(videoPath);
+      const videoSize = (stats.size / (1024 * 1024)).toFixed(2);
+
+      await logAndNotify(
+        sessionId,
+        `✅ Video saved: ${videoPath} (${videoSize} MB)`
+      );
+      await logAndNotify(sessionId, `🔍 File verified: ${stats.size} bytes`);
+      
+      if (isRailway) {
+        await logAndNotify(sessionId, "🚂 Railway: Video stored in temporary location");
+        await logAndNotify(sessionId, "💾 Auto-download will be triggered after completion");
+      }
+
+      // 🎵 NUEVO: Generar automáticamente subtítulos (REMOVIDO - se hace en el servidor)
+      // Los subtítulos se procesan en el servidor para mejor control de eventos
+
+      return {
+        archivo: videoPath,
+        nameArchivo: nameVideo,
+        tamaño: `${videoSize} MB`,
+        buffer: Buffer.from(response.data),
+        url: videoUrl,
+        success: true
+      };
+
+    } catch (downloadError) {
+      if (attempt < MAX_DOWNLOAD_RETRIES) {
+        await logAndNotify(sessionId, `⚠️ Download attempt ${attempt} failed: ${downloadError.message}`);
+        await logAndNotify(sessionId, `🔄 Retrying in 10 seconds... (${MAX_DOWNLOAD_RETRIES - attempt} attempts left)`);
+        await new Promise(resolve => setTimeout(resolve, 10000)); // Esperar 10 segundos antes del retry
+        continue; // Continuar con el siguiente intento
+      } else {
+        // Último intento falló
+        await logAndNotify(
+          sessionId,
+          `❌ All download attempts failed. Final error: ${downloadError.message}`
+        );
+        throw downloadError;
+      }
+    }
   }
+  
+  // Este punto no debería alcanzarse nunca
+  throw new Error("Unexpected end of download function");
 }
 
 // ====== MAIN ORCHESTRATION ======
@@ -336,34 +336,53 @@ async function procesarVideoCompleto(audioData, imageData, sessionId) {
     if (!videoListo) {
       await logAndNotify(
         sessionId,
-        "⚠️ Timeout en verificaciones, intentando descarga directa..."
+        "⚠️ Timeout en verificaciones normales, intentando métodos alternativos..."
       );
 
-      // EMPUJÓN: Intentar obtener el video una vez más
-      const estadoFinal = await verificarStatusVideo(
-        videoGeneration.generationId,
-        sessionId
-      );
-      if (estadoFinal.url) {
-        videoUrl = estadoFinal.url;
-        videoListo = true; // *** CRÍTICO: Marcar como listo ***
-        await logAndNotify(sessionId, "✅ Video completado por Hedra - Iniciando descarga");
-      } else {
-        // ÚLTIMO RECURSO: Guardar ID para rescate manual
+      // EMPUJÓN 1: Intentar obtener el video una vez más con más tiempo
+      try {
+        await logAndNotify(sessionId, "🔄 Intento adicional de verificación...");
+        await new Promise((resolve) => setTimeout(resolve, 30000)); // Espera adicional de 30s
+        
+        const estadoFinal = await verificarStatusVideo(
+          videoGeneration.generationId,
+          sessionId
+        );
+        
+        if (estadoFinal.url) {
+          videoUrl = estadoFinal.url;
+          videoListo = true;
+          await logAndNotify(sessionId, "✅ Video encontrado en intento adicional");
+        }
+      } catch (extraCheckError) {
+        await logAndNotify(sessionId, `⚠️ Intento adicional falló: ${extraCheckError.message}`);
+      }
+
+      // EMPUJÓN 2: Si aún no está listo, dar información de rescate
+      if (!videoListo) {
         await logAndNotify(
           sessionId,
-          `❌ Video no completed tras ${intentos} intentos (4 minutes).`
+          `❌ Video no completado tras ${intentos} intentos (~${Math.round((FIRST_WAIT_MS + (POLL_MAX_TRIES * POLL_INTERVAL_MS)) / 60000)} minutos)`
         );
         await logAndNotify(
           sessionId,
-          `🆔 ID para rescate manual: ${videoGeneration.generationId}`
+          `🆔 Generation ID para rescate manual: ${videoGeneration.generationId}`
         );
         await logAndNotify(
           sessionId,
-          `💡 Hedra puede estar lento - intenta más tarde`
+          `🌐 Revisa tu dashboard de Hedra: https://app.hedra.com/`
         );
+        await logAndNotify(
+          sessionId,
+          `💡 El video puede completarse en los próximos minutos`
+        );
+        await logAndNotify(
+          sessionId,
+          `🔄 Puedes intentar generar otro video mientras tanto`
+        );
+        
         throw new Error(
-          `Video no completed tras ${intentos} intentos. ID: ${videoGeneration.generationId}`
+          `Video no completed tras ${intentos} intentos (${Math.round((FIRST_WAIT_MS + (POLL_MAX_TRIES * POLL_INTERVAL_MS)) / 60000)} min). Generation ID: ${videoGeneration.generationId}`
         );
       }
     }

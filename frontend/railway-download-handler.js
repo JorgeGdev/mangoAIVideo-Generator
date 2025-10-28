@@ -4,22 +4,49 @@
 
 // Detectar si estamos en Railway
 const isRailwayEnvironment = () => {
-  return window.location.hostname !== 'localhost' && 
-         window.location.hostname !== '127.0.0.1' &&
-         !window.location.hostname.includes('192.168');
+  const hostname = window.location.hostname;
+  const isLocal = hostname === 'localhost' || 
+                 hostname === '127.0.0.1' ||
+                 hostname.includes('192.168') ||
+                 hostname.includes('10.0.') ||
+                 hostname.includes('172.16.');
+  
+  const isRailway = !isLocal;
+  
+  console.log(`🌍 Hostname: ${hostname}`);
+  console.log(`🚂 Is Railway: ${isRailway}`);
+  
+  return isRailway;
 };
 
 // Auto-descarga en Railway
 function triggerRailwayDownload(videoData) {
-  if (!isRailwayEnvironment() || !videoData.autoDownload) {
+  const isRailway = isRailwayEnvironment();
+  
+  console.log('🚂 Railway download attempt:');
+  console.log('  - Is Railway:', isRailway);
+  console.log('  - Auto download:', videoData.autoDownload);
+  console.log('  - Video name:', videoData.videoName);
+  console.log('  - Download URL:', videoData.downloadUrl);
+  console.log('  - Video path:', videoData.videoPath);
+  
+  if (!isRailway || !videoData.autoDownload) {
+    console.log('❌ Railway auto-download conditions not met');
+    return false;
+  }
+  
+  const downloadUrl = videoData.downloadUrl || videoData.videoPath;
+  if (!downloadUrl) {
+    console.log('❌ No download URL available');
     return false;
   }
   
   console.log('🚂 Railway: Triggering auto-download for', videoData.videoName);
+  console.log('🔗 Using URL:', downloadUrl);
   
   // Crear elemento de descarga temporal
   const downloadLink = document.createElement('a');
-  downloadLink.href = videoData.downloadUrl || videoData.videoPath;
+  downloadLink.href = downloadUrl;
   downloadLink.download = videoData.videoName;
   downloadLink.style.display = 'none';
   
@@ -31,6 +58,7 @@ function triggerRailwayDownload(videoData) {
   // Mostrar notificación de descarga
   showRailwayDownloadNotification(videoData.videoName);
   
+  console.log('✅ Railway download link clicked successfully');
   return true;
 }
 
@@ -98,14 +126,26 @@ function showRailwayDownloadNotification(videoName) {
 function handleVideoCompletionForRailway(eventData) {
   if (eventData.type === 'video_completion' && eventData.isRailway) {
     console.log('🎬 Railway video completion detected:', eventData);
+    console.log('📹 Video type:', eventData.isSubtitled ? 'Subtitled' : 'Normal');
     
-    // Intentar descarga automática
+    // Intentar descarga automática para AMBOS tipos de video
     const downloadTriggered = triggerRailwayDownload(eventData);
     
     if (downloadTriggered) {
       console.log('✅ Railway auto-download triggered successfully');
+      
+      // Para video subtitulado, mostrar mensaje adicional
+      if (eventData.isSubtitled) {
+        console.log('🎯 Final subtitled video download started');
+      }
     } else {
       console.log('⚠️ Railway auto-download not triggered');
+      console.log('🔍 Debug info:', {
+        isRailway: eventData.isRailway,
+        autoDownload: eventData.autoDownload,
+        downloadUrl: eventData.downloadUrl,
+        videoPath: eventData.videoPath
+      });
     }
   }
 }

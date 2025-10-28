@@ -160,5 +160,6 @@ module.exports = {
   getTempFileInfo,
   cleanupExpiredFiles,
   getTempFileStats,
-  initStorage
+  initStorage,
+  tempFileCache // Export cache for debugging
 };

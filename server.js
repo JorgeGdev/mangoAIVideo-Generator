@@ -17,7 +17,8 @@ const {
   markAsDownloaded,
   getTempFileInfo,
   getTempFileStats,
-  initStorage 
+  initStorage,
+  tempFileCache 
 } = require('./modules/railway-storage');
 
 // ============================================================================
@@ -743,19 +744,39 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       broadcastLog(
         `📋 Debug: imageData.imageAssetId = ${imageData.imageAssetId}`
       );
+      
+      // Capturar tiempo de inicio
+      const startTime = Date.now();
+      
       videoFinal = await procesarVideoCompleto(audioData, imageData, sessionId);
+      
+      const endTime = Date.now();
+      const processTime = Math.round((endTime - startTime) / 1000);
+      videoFinal.duracionProceso = `${Math.floor(processTime / 60)}m ${processTime % 60}s`;
+      
       broadcastLog("🎯 procesarVideoCompleto() COMPLETADO");
+      broadcastLog(`⏱️ Tiempo total de proceso: ${videoFinal.duracionProceso}`);
       broadcastLog(
-        `📋 Debug: videoFinal recibido:`,
-        JSON.stringify(videoFinal, null, 2)
+        `📋 Debug: videoFinal recibido - nameArchivo: ${videoFinal.nameArchivo}, tamaño: ${videoFinal.tamaño}`
       );
     } catch (videoError) {
       broadcastLog(`❌ Error creando video final: ${videoError.message}`);
-      broadcastLog(`🔍 Error completo: ${JSON.stringify(videoError, null, 2)}`);
+      
+      // Logging más detallado para debugging
+      if (videoError.stack) {
+        broadcastLog(`🔍 Stack trace: ${videoError.stack.split('\n')[0]}`);
+      }
 
       if (videoError.message.includes("Timeout")) {
         broadcastLog("💡 El video puede estar aún procesándose en Hedra");
-        broadcastLog(`🆔 Video ID: Revisa manualmente más tarde`);
+        broadcastLog(`🆔 Revisa tu dashboard de Hedra manualmente`);
+        broadcastLog(`⏰ Intenta generar otro video en 5-10 minutos`);
+      } else if (videoError.message.includes("no completed")) {
+        broadcastLog("🔄 Hedra está procesando muy lento hoy");
+        broadcastLog(`💡 El video puede completarse en unos minutos más`);
+      } else if (videoError.message.includes("download")) {
+        broadcastLog("📥 Error en descarga - video generado pero no descargado");
+        broadcastLog(`🔧 Verifica conexión de red y espacio en disco`);
       }
 
       videoSessions.delete(sessionId);
@@ -787,6 +808,8 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       if (isRailway) {
         registerTempFile(videoFinal.nameArchivo, videoFilePath, 'video', 30);
         broadcastLog(`⏰ Railway: Video registrado para descarga temporal (30 min)`);
+        broadcastLog(`📁 Railway: Archivo guardado en: ${videoFilePath}`);
+        broadcastLog(`🔗 Railway: URL de descarga: /api/temp/videos/${videoFinal.nameArchivo}`);
       }
 
       // Calcular duración del proceso en segundos
@@ -863,26 +886,38 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
         // Procesar subtítulos en background (no bloquear respuesta)
         processVideoSubtitles(videoFilePath, sessionId)
           .then((subtitleResult) => {
-            broadcastLog(`✅ SUBTÍTULOS COMPLETADOS: ${subtitleResult.outputPath}`);
+            broadcastLog(`✅ SUBTÍTULOS COMPLETADOS: ${subtitleResult.subtitledVideo}`);
             
             // Enviar evento de video subtitulado completado
-            const subtitledVideoName = path.basename(subtitleResult.outputPath);
+            const subtitledVideoName = subtitleResult.subtitledVideoName;
+            const subtitledVideoPath = subtitleResult.subtitledVideo;
             
             // En Railway, registrar archivo subtitulado como temporal
             if (isRailway) {
-              registerTempFile(subtitledVideoName, subtitleResult.outputPath, 'video_subtitled', 30);
-              broadcastLog(`⏰ Railway: Video subtitulado registrado para descarga temporal`);
+              registerTempFile(subtitledVideoName, subtitledVideoPath, 'video_subtitled', 30);
+              broadcastLog(`⏰ Railway: Video subtitulado registrado para descarga temporal (30 min)`);
+              broadcastLog(`📁 Railway: Archivo subtitulado guardado en: ${subtitledVideoPath}`);
+              broadcastLog(`🔗 Railway: URL de descarga subtítulos: /api/temp/videos_subtitled/${subtitledVideoName}`);
             }
             
             const subtitledVideoUrl = isRailway 
               ? `/api/temp/videos_subtitled/${subtitledVideoName}`
               : `/final_videos_subtitled/${subtitledVideoName}`;
             
+            // Obtener tamaño real del archivo
+            let videoSizeBytes = 0;
+            try {
+              const stats = fs.statSync(subtitledVideoPath);
+              videoSizeBytes = stats.size;
+            } catch (err) {
+              console.log('Warning: Could not get subtitled video size');
+            }
+            
             broadcastEvent({
               type: 'video_completion',
               videoPath: subtitledVideoUrl,
               videoName: subtitledVideoName,
-              videoSize: subtitleResult.fileSize || 0,
+              videoSize: videoSizeBytes,
               sessionId: sessionId + '_subtitled',
               isSubtitled: true,
               originalVideo: videoFinal.nameArchivo,
@@ -892,7 +927,7 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
               autoDownload: isRailway
             });
             
-            broadcastLog(`📹 Video con subtítulos listo: ${subtitledVideoName}`);
+            broadcastLog(`📹 Video con subtítulos listo: ${subtitledVideoName} (${subtitleResult.size})`);
             broadcastLog(`🎯 Ambas versiones disponibles (original + subtítulos)`);
             
             if (isRailway) {
@@ -1709,20 +1744,29 @@ app.post("/api/news/clear-cache", requireAuth, (req, res) => {
 
 // Endpoint para descargar videos temporales en Railway
 app.get('/api/temp/videos/:filename', (req, res) => {
+  console.log(`🚂 Railway download request: ${req.params.filename}`);
+  
   if (!isRailway) {
+    console.log('❌ Not in Railway environment');
     return res.status(404).json({ error: 'Only available in Railway environment' });
   }
   
   const { filename } = req.params;
+  console.log(`🔍 Looking for temp file: ${filename}`);
+  
   const fileInfo = getTempFileInfo(filename);
   
   if (!fileInfo) {
+    console.log(`❌ File info not found for: ${filename}`);
+    console.log('📋 Available temp files:', Object.keys(tempFileCache || {}));
     return res.status(404).json({ error: 'File not found or expired' });
   }
   
   const filePath = fileInfo.path;
+  console.log(`📁 File path: ${filePath}`);
   
   if (!fs.existsSync(filePath)) {
+    console.log(`❌ Physical file not found: ${filePath}`);
     return res.status(404).json({ error: 'Physical file not found' });
   }
   
@@ -1733,7 +1777,10 @@ app.get('/api/temp/videos/:filename', (req, res) => {
     // Marcar como descargado
     markAsDownloaded(filename);
     
-    // Configurar headers para descarga
+    // Configurar headers para descarga CON CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
     res.setHeader('Content-Type', 'video/mp4');
     res.setHeader('Content-Length', fileSize);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -1753,20 +1800,29 @@ app.get('/api/temp/videos/:filename', (req, res) => {
 
 // Endpoint para descargar videos subtitulados temporales
 app.get('/api/temp/videos_subtitled/:filename', (req, res) => {
+  console.log(`🚂 Railway subtitled download request: ${req.params.filename}`);
+  
   if (!isRailway) {
+    console.log('❌ Not in Railway environment');
     return res.status(404).json({ error: 'Only available in Railway environment' });
   }
   
   const { filename } = req.params;
+  console.log(`🔍 Looking for subtitled temp file: ${filename}`);
+  
   const fileInfo = getTempFileInfo(filename);
   
   if (!fileInfo || fileInfo.type !== 'video_subtitled') {
+    console.log(`❌ Subtitled file info not found for: ${filename}`);
+    console.log('📋 Available temp files:', Object.keys(tempFileCache || {}));
     return res.status(404).json({ error: 'Subtitled file not found or expired' });
   }
   
   const filePath = fileInfo.path;
+  console.log(`📁 Subtitled file path: ${filePath}`);
   
   if (!fs.existsSync(filePath)) {
+    console.log(`❌ Physical subtitled file not found: ${filePath}`);
     return res.status(404).json({ error: 'Physical file not found' });
   }
   
@@ -1776,6 +1832,10 @@ app.get('/api/temp/videos_subtitled/:filename', (req, res) => {
     
     markAsDownloaded(filename);
     
+    // Configurar headers para descarga CON CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
     res.setHeader('Content-Type', 'video/mp4');
     res.setHeader('Content-Length', fileSize);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -1807,6 +1867,33 @@ app.get('/api/temp/stats', (req, res) => {
     railway: true,
     environment: 'production',
     tempFiles: stats,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Endpoint de debug para ver archivos temporales disponibles
+app.get('/api/debug/temp-files', (req, res) => {
+  console.log('🔍 Debug: Listing temporary files...');
+  
+  const stats = getTempFileStats();
+  const tempCacheEntries = Array.from(tempFileCache.entries() || []);
+  
+  console.log('📋 Current temp files:', tempCacheEntries.length);
+  
+  res.json({
+    environment: isRailway ? 'Railway' : 'Local',
+    isRailway,
+    tempCacheSize: tempCacheEntries.length,
+    tempFiles: tempCacheEntries.map(([filename, info]) => ({
+      filename,
+      type: info.type,
+      path: info.path,
+      exists: fs.existsSync(info.path),
+      createdAt: new Date(info.createdAt).toISOString(),
+      expireAt: new Date(info.expireAt).toISOString(),
+      downloaded: info.downloaded
+    })),
+    stats,
     timestamp: new Date().toISOString()
   });
 });

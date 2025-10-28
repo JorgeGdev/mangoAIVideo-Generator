@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "bot": "node main.js",
     "scraper": "node scraper-4-paises-final.js",
-    "railway:start": "NODE_ENV=production node server.js"
+    "railway:start": "NODE_ENV=production node server.js",
+    "test:railway": "node test-railway.js"
   },
   "keywords": [
     "ai",

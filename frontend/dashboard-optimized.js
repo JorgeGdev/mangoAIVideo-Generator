@@ -293,7 +293,24 @@ function conectarLogs() {
       // RAILWAY AUTO-DOWNLOAD: Trigger download if in Railway environment
       if (data.isRailway && data.autoDownload && window.railwayDownloadHandler) {
         console.log('🚂 Triggering Railway auto-download...');
+        console.log('📊 Download data:', {
+          videoName: data.videoName,
+          downloadUrl: data.downloadUrl,
+          videoPath: data.videoPath,
+          isSubtitled: data.isSubtitled
+        });
+        
         window.railwayDownloadHandler.handleVideoCompletion(data);
+        
+        // Add download log to progress dialog
+        if (window.Modals && window.Modals.addProgressLog) {
+          window.Modals.addProgressLog(`🚂 Railway: Auto-download triggered for ${data.videoName}`);
+        }
+      } else {
+        console.log('❌ Railway auto-download not triggered:');
+        console.log('  - isRailway:', data.isRailway);
+        console.log('  - autoDownload:', data.autoDownload);
+        console.log('  - handler available:', !!window.railwayDownloadHandler);
       }
       
       // Check if this is the subtitled version (FINAL step)
@@ -353,12 +370,30 @@ function mostrarComparacionImagenes(originalPath, transformedPath) {
   }
   
   console.log('📷 Setting image comparison:');
-  console.log('   Original:', originalPath);
-  console.log('   Transformed:', transformedPath);
+  console.log('   Original path received:', originalPath);
+  console.log('   Transformed path:', transformedPath);
   
-  originalImg.src = originalPath || '';
+  // IMPORTANTE: Para la imagen ORIGINAL, usar la del preview (la que subió el usuario)
+  // porque originalPath puede ser una ruta temporal del servidor que ya no existe
+  const previewImg = document.getElementById('previewImage');
+  
+  if (previewImg && previewImg.src && previewImg.style.display !== 'none') {
+    // Usar la imagen del preview (que ya está cargada en el navegador)
+    console.log('📷 Using preview image for original (user uploaded photo)');
+    originalImg.src = previewImg.src;
+  } else if (originalPath) {
+    // Fallback: usar la ruta que vino del servidor
+    console.log('📷 Using server path for original');
+    originalImg.src = originalPath;
+  }
+  
+  // La imagen transformada siempre viene del servidor
   transformedImg.src = transformedPath || '';
   block.style.display = 'block';
+  
+  console.log('✅ Image comparison set:');
+  console.log('   Original src:', originalImg.src);
+  console.log('   Transformed src:', transformedImg.src);
   
   // Force update progress modal image comparison if it's open
   if (window.Modals && window.Modals.forceUpdateImageComparison) {

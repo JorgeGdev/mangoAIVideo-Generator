@@ -391,9 +391,7 @@ function mostrarComparacionImagenes(originalPath, transformedPath) {
   transformedImg.src = transformedPath || '';
   block.style.display = 'block';
   
-  console.log('✅ Image comparison set:');
-  console.log('   Original src:', originalImg.src);
-  console.log('   Transformed src:', transformedImg.src);
+  
   
   // Force update progress modal image comparison if it's open
   if (window.Modals && window.Modals.forceUpdateImageComparison) {

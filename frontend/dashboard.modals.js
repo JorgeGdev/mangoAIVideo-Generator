@@ -239,9 +239,7 @@
           // Si tenemos imagen transformada real, mostrar la comparación
           cache.progressImageComparison.style.display = 'block';
           
-          console.log('✅ Images copied to progress modal:');
-          console.log('   Original:', cache.progressOriginalImage.src);
-          console.log('   Transformed:', cache.progressTransformedImage.src);
+          
         }
       }
     }

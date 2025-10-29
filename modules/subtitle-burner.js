@@ -17,12 +17,32 @@ async function burnWithASS(inputPath, assPath, outPath) {
   await ensureDir(path.dirname(outPath));
 
   return new Promise((resolve, reject) => {
+    // Railway/Linux vs Windows path handling
+    const isWindows = process.platform === 'win32';
+    const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
+    
+    let subtitleFilter;
+    if (isRailway || !isWindows) {
+      // Railway/Linux: usar path directo, sin escape de ':'
+      subtitleFilter = `subtitles='${assPath}'`;
+    } else {
+      // Windows local: escapar \ y :
+      subtitleFilter = `subtitles='${assPath.replace(/\\/g, '/').replace(/:/g, '\\:')}'`;
+    }
+    
+    console.log(`🔥 Subtitle filter: ${subtitleFilter}`);
+    
+    // FORCE 9:16 aspect ratio - Always vertical format
     const vf = [
-      "scale='if(gt(iw,1920),1920,iw)':'if(gt(ih,1080),1080,ih)':force_original_aspect_ratio=decrease",
-      // Escapar correctamente para Windows
-      `subtitles='${assPath.replace(/\\/g, '/').replace(/:/g, '\\:')}'`
+      "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+      subtitleFilter
     ].join(',');
 
+    console.log(`🎬 FFmpeg input: ${inputPath}`);
+    console.log(`📝 ASS file: ${assPath}`);
+    console.log(`🎯 Output: ${outPath}`);
+    console.log(`🔧 Video filters: ${vf}`);
+    
     ffmpeg(inputPath)
       .videoFilters(vf)
       .outputOptions([
@@ -31,15 +51,29 @@ async function burnWithASS(inputPath, assPath, outPath) {
         '-crf 23',
         '-c:a copy'
       ])
-      .on('error', (err) => reject(err))
-      .on('end', () => resolve(outPath))
+      .on('start', (commandLine) => {
+        console.log('🚀 FFmpeg command:', commandLine);
+      })
+      .on('progress', (progress) => {
+        if (progress.percent) {
+          console.log(`⏳ Subtitle burning progress: ${Math.round(progress.percent)}%`);
+        }
+      })
+      .on('error', (err) => {
+        console.error('❌ FFmpeg subtitle burning error:', err.message);
+        reject(err);
+      })
+      .on('end', () => {
+        console.log('✅ Subtitle burning completed successfully');
+        resolve(outPath);
+      })
       .save(outPath);
   });
 }
 
 /**
- * Devuelve dimensiones del INPUT y del OUTPUT "fitted" a la caja 1920x1080,
- * emulando el filtro: force_original_aspect_ratio=decrease
+ * Devuelve dimensiones del INPUT y del OUTPUT - SIEMPRE 9:16 (1080x1920)
+ * Forzamos formato vertical para todos los videos
  */
 async function getTargetDimensions(inputPath) {
   const meta = await ffprobeAsync(inputPath);
@@ -47,8 +81,11 @@ async function getTargetDimensions(inputPath) {
   const iw = Number(stream.width) || 1920;
   const ih = Number(stream.height) || 1080;
 
-  const { width, height } = fitBox(iw, ih, 1920, 1080);
-  return { input: { width: iw, height: ih }, output: { width, height } };
+  // FORCE 9:16 - Always return 1080x1920 (vertical)
+  return { 
+    input: { width: iw, height: ih }, 
+    output: { width: 1080, height: 1920 } 
+  };
 }
 
 function fitBox(iw, ih, maxW, maxH) {

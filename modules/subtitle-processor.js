@@ -98,6 +98,14 @@ async function processVideoSubtitles(videoPath, sessionId) {
 
     await fs.writeFile(assPath, assContent, 'utf8');
     console.log(`💾 [${sessionId}] ASS file saved: ${assPath}`);
+    
+    // Verificar que el archivo ASS existe y tiene contenido
+    const assStats = await fs.stat(assPath);
+    console.log(`📋 [${sessionId}] ASS file size: ${assStats.size} bytes`);
+    
+    // Debug: mostrar una muestra del contenido ASS
+    const assPreview = assContent.substring(0, 500);
+    console.log(`🔍 [${sessionId}] ASS preview:`, assPreview.slice(0, 200) + '...');
 
     // 4) Quemar subtítulos en el video
     console.log(`🔥 [${sessionId}] Burning subtitles into video...`);

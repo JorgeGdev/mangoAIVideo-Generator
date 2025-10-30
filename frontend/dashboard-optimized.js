@@ -285,37 +285,25 @@ function conectarLogs() {
 
     // 4) VIDEO COMPLETADO: abrir diálogo + Railway auto-download
     if (data.type === 'video_completion') {
-      console.log('🎬 Video completion received:', data);
-      console.log('🎬 isSubtitled:', data.isSubtitled);
-      console.log('🎬 isRailway:', data.isRailway);
-      console.log('🎬 Modal system available:', !!window.Modals);
+      
       
       // RAILWAY AUTO-DOWNLOAD: Trigger download if in Railway environment
       if (data.isRailway && data.autoDownload && window.railwayDownloadHandler) {
-        console.log('🚂 Triggering Railway auto-download...');
-        console.log('📊 Download data:', {
-          videoName: data.videoName,
-          downloadUrl: data.downloadUrl,
-          videoPath: data.videoPath,
-          isSubtitled: data.isSubtitled
-        });
+        
         
         window.railwayDownloadHandler.handleVideoCompletion(data);
         
         // Add download log to progress dialog
         if (window.Modals && window.Modals.addProgressLog) {
-          window.Modals.addProgressLog(`🚂 Railway: Auto-download triggered for ${data.videoName}`);
+          window.Modals.addProgressLog(`Railway: Auto-download triggered for ${data.videoName}`);
         }
       } else {
-        console.log('❌ Railway auto-download not triggered:');
-        console.log('  - isRailway:', data.isRailway);
-        console.log('  - autoDownload:', data.autoDownload);
-        console.log('  - handler available:', !!window.railwayDownloadHandler);
+        
       }
       
       // Check if this is the subtitled version (FINAL step)
       if (data.isSubtitled) {
-        console.log('📹 SUBTITLED VIDEO ARRIVED - Showing success message!');
+        
         
         // Update to final step and show success message
         if (window.Modals && window.Modals.showSubtitledVideoComplete) {
@@ -655,7 +643,7 @@ async function limpiarLogs() {
 // Clear carousel cache and refresh news
 async function limpiarCacheCarousel() {
   try {
-    console.log('🔄 Clearing carousel cache and fetching fresh news...');
+    
     
     // Clear cache on server
     await fetch('/api/news/clear-cache', { method: 'POST' });
@@ -663,9 +651,9 @@ async function limpiarCacheCarousel() {
     // Fetch fresh news
     await fetchCarouselNews();
     
-    console.log('✅ Carousel refreshed with improved filters');
+    
   } catch (error) {
-    console.error('❌ Carousel refresh error:', error);
+    
   }
 }
 
@@ -748,7 +736,7 @@ async function logout() {
 // ============================================================================
 async function loadShowcaseVideos() {
   try {
-    console.log('📹 [Showcase] Loading videos (original + subtitled)...');
+    
     
     const response = await fetch('/api/videos/combined');
     const result = await response.json();

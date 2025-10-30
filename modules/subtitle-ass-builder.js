@@ -23,7 +23,7 @@ function buildASS(words, opts = {}) {
   const {
     resX = 1920,
     resY = 1080,
-    font = 'Montserrat',
+    font = 'Arial',              // Fuente más segura para Railway
     fontSize = 60,
     primary = '&H00FFFFFF&',     // blanco
     secondary = '&H00FFCC66&',   // azul claro (#66CCFF -> &H00FFCC66&)

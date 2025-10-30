@@ -136,16 +136,10 @@ function handleVideoCompletionForRailway(eventData) {
       
       // Para video subtitulado, mostrar mensaje adicional
       if (eventData.isSubtitled) {
-        console.log('🎯 Final subtitled video download started');
+        
       }
     } else {
-      console.log('⚠️ Railway auto-download not triggered');
-      console.log('🔍 Debug info:', {
-        isRailway: eventData.isRailway,
-        autoDownload: eventData.autoDownload,
-        downloadUrl: eventData.downloadUrl,
-        videoPath: eventData.videoPath
-      });
+      console.log('❌ Railway auto-download not triggered');
     }
   }
 }
@@ -176,5 +170,3 @@ window.railwayDownloadHandler = {
   downloadFromRailway: downloadFromRailway
 };
 
-console.log('🚂 Railway download handler initialized');
-console.log('🌍 Environment:', isRailwayEnvironment() ? 'Railway (Production)' : 'Local Development');

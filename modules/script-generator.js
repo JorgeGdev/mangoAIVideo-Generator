@@ -317,29 +317,29 @@ CONTENIDO: ${doc.content}
       .join("\n\n");
 
     // PASO 3: ULTRA-STRICT English Prompt for 20-Second Videos
-    const promptOptimizado = `You are a professional news presenter. Create a script of EXACTLY 65-70 words for 20-second videos with 2-second silence padding.
+    const promptOptimizado = `You are a professional news presenter. Create a script of EXACTLY 60-65 words for 20-second videos with 2-second silence padding.
 
 ⏱️ CRITICAL TIMING CONSTRAINT: MAXIMUM 16 seconds of speech (20 seconds total - 4 seconds silence)
-📏 WORD LIMIT: 65-70 words MAXIMUM (4.3 words per second average)
+📏 WORD LIMIT: 60-65 words MAXIMUM (4.3 words per second average)
 
 CRITICAL: USE ONLY THE PROVIDED NEWS DATA BELOW. Topic: "${query}".
 
-MANDATORY STRUCTURE (65-70 words total):
+MANDATORY STRUCTURE (60-65 words total):
 🎣 HOOK (0-3 seconds): 12-15 words
 Fast impact opening with exclamation
 ✓ Main subject from database only
 ✓ HIGH-ENERGY words: BREAKING!, EXCLUSIVE!, URGENT!
 
-📰 CORE (3-13 seconds): 40-45 words  
+📰 CORE (3-10 seconds): 35-40 words  
 ✓ Essential facts from database only
 ✓ Key details, numbers, locations from provided data
 ✓ NO speculation or added information
 ✓ Direct, concise reporting
 
-💬 CTA (13-16 seconds): 10-12 words
+💬 CTA (13-16 seconds): 8-10 words
 ✓ Quick engagement question
 ✓ NO EMOJIS AT ALL - Text only
-✓ Brief and punchy
+✓ Asking for opinions or comments
 
 🔥 EXAMPLES (65-70 words each):
 
@@ -385,27 +385,26 @@ RESPOND ONLY THE SCRIPT:`;
           role: "user",
           content: `
 🎯 YOUR MISSION
-Turn verified news from the database only into a spoken script of EXACTLY 75 to 80 words for voiceover/Reels. If the database lacks info, use the fallback line. Never invent or assume details.
+Turn verified news from the database only into a spoken script of EXACTLY 60 to 65 words for voiceover/Reels. If the database lacks info, use the fallback line. Never invent or assume details.
 
 🎙 TONE & STYLE
 - Breaking urgency, social-first cadence, short sentences, present tense
 - Clear, responsible wording; no speculation or clickbait claims
-- Optional: ONE emoji if truly additive; no hashtags
 
-📋 REQUIRED STRUCTURE (75–80 words total)
-1) HOOK (0–3s / 15–20 words)
+📋 REQUIRED STRUCTURE (60–65 words total)
+1) HOOK (0–3s / 15–18 words)
    - High-impact openers: "BREAKING!", "DEVELOPING!", "MAJOR UPDATE!"
    - Name the main event/person/place; why it matters now
    - Build curiosity (e.g., "What we know—fast.")
 
-2) CORE (3–17s / 45–55 words)
+2) CORE (3–17s / 30–40 words)
    - ONLY details in the database:
      - Who/what/where/when/how; figures, locations, dates, officials, quotes
      - Immediate impact or relevance (markets, safety, travel, policy) if present
    - Professional, chronological, concise
    - No time claims ("minutes ago") unless explicitly in database
 
-3) CTA (18–20s / 5 words)
+3) CTA (16–18s / 5 words)
    - Must be a question or invite to comment (engagement-focused), e.g.:
      - "Your take? Comment below now."
      - "What happened? Join comments below."
@@ -460,7 +459,7 @@ ${contextoRAG.substring(0, 3000)}
     // If still slightly long, clip to 62 words to ensure <=20s
     if (palabras < 75) {
       console.log(
-        `[${sessionId}] Script under 75 words (${palabras}). Returning as-is (model should hit 75–80).`
+        `[${sessionId}] Script under 65 words (${palabras}). Returning as-is (model should hit 60–65).`
       );
     }
 

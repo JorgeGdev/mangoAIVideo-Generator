@@ -77,7 +77,7 @@ async function processVideoSubtitles(videoPath, sessionId) {
     // 3) Generar archivo ASS con estilo karaoke
     console.log(`🎭 [${sessionId}] Building ASS subtitle file...`);
     const assContent = buildASS(words, {
-      font: 'Montserrat',
+      font: 'Arial',              // Fuente más segura para Railway
       fontSize,
       marginV,
       primary: '&H00FFFFFF&',     // blanco

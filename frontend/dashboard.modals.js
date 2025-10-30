@@ -213,7 +213,7 @@
     if (cache.progressOriginalImage && cache.progressTransformedImage) {
       // PRIORIDAD 1: Si hay imagen en el preview (foto subida por el usuario), usarla
       if (previewImg && previewImg.src && previewImg.style.display !== 'none') {
-        console.log('📷 Using preview image as original source');
+        
         cache.progressOriginalImage.src = previewImg.src;
       }
       // PRIORIDAD 2: Si no, usar la imagen de la comparación principal
@@ -222,7 +222,7 @@
         
         // Verificar que no sea imagen por defecto
         if (originalSrc && !originalSrc.includes('before.png') && originalSrc !== '') {
-          console.log('📷 Using main comparison original image');
+          
           cache.progressOriginalImage.src = originalSrc;
         }
       }
@@ -233,7 +233,7 @@
         
         // Verificar que no sea imagen por defecto
         if (transformedSrc && !transformedSrc.includes('after.png') && transformedSrc !== '') {
-          console.log('📷 Using main comparison transformed image');
+          
           cache.progressTransformedImage.src = transformedSrc;
           
           // Si tenemos imagen transformada real, mostrar la comparación
@@ -264,26 +264,24 @@
     // Show image comparison immediately with default images
     if (cache.progressImageComparison) {
       cache.progressImageComparison.style.display = 'block';
-      console.log('✅ Progress image comparison shown initially');
+      
       
       // Set default images if no images are loaded yet
       if (cache.progressOriginalImage && cache.progressTransformedImage) {
         // Use before.png and after.png as defaults (sin / al inicio para consistencia)
         cache.progressOriginalImage.src = 'images/before.png';
         cache.progressTransformedImage.src = 'images/after.png';
-        console.log('📷 Default images loaded:');
-        console.log('   Original: images/before.png');
-        console.log('   Transformed: images/after.png');
+        
         
         // Add error handlers to check if images load
         cache.progressOriginalImage.onerror = function() {
-          console.error('❌ Failed to load original default image: images/before.png');
+          console.error('Failed to load original default image: images/before.png');
           console.error('   Trying absolute path...');
           // Fallback: try absolute path
           this.src = '/images/before.png';
         };
         cache.progressTransformedImage.onerror = function() {
-          console.error('❌ Failed to load transformed default image: images/after.png');
+          console.error('Failed to load transformed default image: images/after.png');
           console.error('   Trying absolute path...');
           // Fallback: try absolute path
           this.src = '/images/after.png';
@@ -601,7 +599,7 @@
       cache.progressVideo.currentTime = 0;
       cache.progressVideo.src = '';
       cache.progressVideo.load(); // Force reload to clear everything
-      console.log('🔇 Video completely stopped and cleared');
+      
     }
     
     // IMPORTANT: Now reset everything for new generation AFTER success message disappears
@@ -634,7 +632,7 @@
       window.currentSessionId = null;
     }
     
-    console.log('✨ Everything reset for new generation');
+    
   }
 
   function hideProgressDialog() {
@@ -646,7 +644,7 @@
         cache.progressVideo.currentTime = 0;
         cache.progressVideo.src = '';
         cache.progressVideo.load();
-        console.log('Video stopped when closing modal');
+        
       }
       safeClose(cache.progress);
     }

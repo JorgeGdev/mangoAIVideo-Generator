@@ -2176,6 +2176,11 @@ app.listen(PORT, () => {
   broadcastLog("📋 Dashboard web disponible");
   broadcastLog("⚡ System ready to use");
   
+  // RAILWAY CHECKS - Verificar soporte de FFmpeg para subtítulos
+  if (isRailway) {
+    checkFFmpegSupport();
+  }
+  
   // Inicializar sistema de storage (Railway compatible)
   initStorage();
   
@@ -2532,6 +2537,44 @@ app.post("/api/rag/run-now", requireAuth, (req, res) => {
     message: "RAG scraper iniciado manualmente. Revisa los logs para seguir el progreso."
   });
 });
+
+// ============================================================================
+// RAILWAY FFMPEG CHECKS - Verificar soporte de filtros ASS y codecs
+// ============================================================================
+function checkFFmpegSupport() {
+  const ffmpeg = require('fluent-ffmpeg');
+  
+  console.log('🔧 Railway: Checking FFmpeg support for subtitles...');
+  
+  // Check filters
+  ffmpeg.getAvailableFilters((e, filters) => {
+    if (e) {
+      console.log('❌ FFmpeg filters error:', e.message);
+      broadcastLog('❌ Railway: Error checking FFmpeg filters');
+    } else {
+      const hasAssFilter = !!filters.ass;
+      console.log('🎭 Has ASS filter?', hasAssFilter ? '✅ YES' : '❌ NO');
+      broadcastLog(`🎭 Railway FFmpeg ASS filter: ${hasAssFilter ? 'SUPPORTED ✅' : 'NOT SUPPORTED ❌'}`);
+      
+      if (!hasAssFilter) {
+        console.log('⚠️  CRITICAL: ASS filter not available - subtitles may not work');
+        broadcastLog('⚠️  CRITICAL: Subtitles may not work without ASS filter');
+      }
+    }
+  });
+
+  // Check codecs
+  ffmpeg.getAvailableCodecs((e, codecs) => {
+    if (e) {
+      console.log('❌ FFmpeg codecs error:', e.message);
+      broadcastLog('❌ Railway: Error checking FFmpeg codecs');
+    } else {
+      const hasLibx264 = !!codecs.libx264;
+      console.log('🎥 Has libx264?', hasLibx264 ? '✅ YES' : '❌ NO');
+      broadcastLog(`🎥 Railway FFmpeg libx264: ${hasLibx264 ? 'SUPPORTED ✅' : 'NOT SUPPORTED ❌'}`);
+    }
+  });
+}
 
 // Manejo de cierre del servidor
 process.on("SIGINT", () => {

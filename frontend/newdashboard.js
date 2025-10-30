@@ -88,7 +88,7 @@ function setupPhotoUpload() {
       return;
     }
 
-    console.log(`📁 File selected: ${file.name} (${file.type}, ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+    
 
     // Validate file type
     if (!file.type.startsWith('image/')) {

@@ -9,47 +9,36 @@ ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 // Muy importante en Windows: indicar dónde está ffprobe
 ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
-/**
- * Burn-in de subtítulos ASS y downscale a 1080p (manteniendo AR).
- * Salida con CRF 23, audio copy.
- */
-async function burnWithASS(inputPath, assPath, outPath) {
-  await ensureDir(path.dirname(outPath));
+async function getTargetDimensions(input) {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(input, (err, data) => {
+      if (err) return reject(err);
+      const s = data.streams.find(s => s.width && s.height) || {};
+      const width = s.width || 1920;
+      const height = s.height || 1080;
+      resolve({ input: { width, height }, output: { width, height } });
+    });
+  });
+}
+
+async function burnWithASS(inputVideo, assPath, outVideo) {
+  await ensureDir(path.dirname(outVideo));
 
   return new Promise((resolve, reject) => {
-    // Railway/Linux vs Windows path handling
-    const isWindows = process.platform === 'win32';
-    const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production';
-    
-    let subtitleFilter;
-    if (isRailway || !isWindows) {
-      // Railway/Linux: usar path directo, sin escape de ':'
-      subtitleFilter = `subtitles='${assPath}'`;
-    } else {
-      // Windows local: escapar \ y :
-      subtitleFilter = `subtitles='${assPath.replace(/\\/g, '/').replace(/:/g, '\\:')}'`;
-    }
-    
-    console.log(`🔥 Subtitle filter: ${subtitleFilter}`);
-    
-    // FORCE 9:16 aspect ratio - Always vertical format
-    const vf = [
-      "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
-      subtitleFilter
-    ].join(',');
+    // Quote ASS path for Windows / spaces / tmp
+    const assFilter = `ass='${assPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 
-    console.log(`🎬 FFmpeg input: ${inputPath}`);
+    console.log(`🔥 Using ASS filter: ${assFilter}`);
+    console.log(`🎬 FFmpeg input: ${inputVideo}`);
     console.log(`📝 ASS file: ${assPath}`);
-    console.log(`🎯 Output: ${outPath}`);
-    console.log(`🔧 Video filters: ${vf}`);
-    
-    ffmpeg(inputPath)
-      .videoFilters(vf)
+    console.log(`🎯 Output: ${outVideo}`);
+
+    ffmpeg(inputVideo)
+      .videoCodec('libx264')
+      .audioCodec('aac')
       .outputOptions([
-        '-c:v libx264',
-        '-preset veryfast',
-        '-crf 23',
-        '-c:a copy'
+        '-movflags +faststart',
+        `-vf ${assFilter}`
       ])
       .on('start', (commandLine) => {
         console.log('🚀 FFmpeg command:', commandLine);
@@ -65,28 +54,13 @@ async function burnWithASS(inputPath, assPath, outPath) {
       })
       .on('end', () => {
         console.log('✅ Subtitle burning completed successfully');
-        resolve(outPath);
+        resolve(outVideo);
       })
-      .save(outPath);
+      .save(outVideo);
   });
 }
 
-/**
- * Devuelve dimensiones del INPUT y del OUTPUT - SIEMPRE 9:16 (1080x1920)
- * Forzamos formato vertical para todos los videos
- */
-async function getTargetDimensions(inputPath) {
-  const meta = await ffprobeAsync(inputPath);
-  const stream = (meta.streams || []).find(s => s.width && s.height) || {};
-  const iw = Number(stream.width) || 1920;
-  const ih = Number(stream.height) || 1080;
 
-  // FORCE 9:16 - Always return 1080x1920 (vertical)
-  return { 
-    input: { width: iw, height: ih }, 
-    output: { width: 1080, height: 1920 } 
-  };
-}
 
 function fitBox(iw, ih, maxW, maxH) {
   if (iw <= maxW && ih <= maxH) return { width: iw, height: ih };

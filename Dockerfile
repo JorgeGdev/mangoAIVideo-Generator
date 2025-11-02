@@ -2,8 +2,8 @@
 
 FROM node:20-alpine
 
-# Install FFmpeg and timezone data for Railway
-RUN apk add --no-cache ffmpeg tzdata
+# Install FFmpeg, fontconfig, fonts, and timezone data for Railway
+RUN apk add --no-cache ffmpeg fontconfig ttf-dejavu tzdata
 
 # Set working directory
 WORKDIR /app

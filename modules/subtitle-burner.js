@@ -25,10 +25,16 @@ async function burnWithASS(inputVideo, assPath, outVideo) {
   await ensureDir(path.dirname(outVideo));
 
   return new Promise((resolve, reject) => {
-    // Quote ASS path for Windows / spaces / tmp
-    const assFilter = `ass='${assPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+    // Estilo seguro con DejaVu Sans y borde visible
+    const safeStyle = "FontName=DejaVu Sans,Outline=2,BorderStyle=3,Shadow=0,PrimaryColour=&H00FFFFFF&,OutlineColour=&H00000000&";
+    
+    // Escapar la ruta del .ass para el filtro subtitles
+    const assEsc = assPath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
+    
+    // Usar filtro subtitles con force_style
+    const subtitlesFilter = `subtitles='${assEsc}':force_style='${safeStyle}'`;
 
-    console.log(`🔥 Using ASS filter: ${assFilter}`);
+    console.log(`🔥 Using subtitles filter: ${subtitlesFilter}`);
     console.log(`🎬 FFmpeg input: ${inputVideo}`);
     console.log(`📝 ASS file: ${assPath}`);
     console.log(`🎯 Output: ${outVideo}`);
@@ -37,11 +43,17 @@ async function burnWithASS(inputVideo, assPath, outVideo) {
       .videoCodec('libx264')
       .audioCodec('aac')
       .outputOptions([
-        '-movflags +faststart',
-        `-vf ${assFilter}`
+        '-vf', subtitlesFilter,
+        '-preset', 'veryfast',
+        '-crf', '23',
+        '-movflags', '+faststart'
       ])
       .on('start', (commandLine) => {
         console.log('🚀 FFmpeg command:', commandLine);
+      })
+      .on('stderr', (stderrLine) => {
+        // Logs detallados de ffmpeg para debug
+        console.log('[ffmpeg stderr]:', stderrLine);
       })
       .on('progress', (progress) => {
         if (progress.percent) {

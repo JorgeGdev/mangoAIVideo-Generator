@@ -324,7 +324,7 @@ app.post("/api/scraper/start", requireAuth, (req, res) => {
       .toString()
       .split("\n")
       .filter((line) => line.trim());
-    lines.forEach((line) => broadcastLog(`📰 MANUAL: ${line}`));
+    lines.forEach((line) => broadcastLog(`MANUAL: ${line}`));
   });
 
   scraperProcess.stderr.on("data", (data) => {
@@ -333,27 +333,27 @@ app.post("/api/scraper/start", requireAuth, (req, res) => {
 
   scraperProcess.on("close", (code) => {
     if (code === 0) {
-      broadcastLog("✅ MANUAL SCRAPER: Completado exitosamente");
-      broadcastLog("📊 Base de datos actualizada - Sistema listo para generar videos");
+      broadcastLog("MANUAL SCRAPER: Completed successfully");
+      broadcastLog("Database updated - System ready to generate videos");
     } else {
-      broadcastLog(`❌ MANUAL SCRAPER: Terminó con código: ${code}`);
+      broadcastLog(`MANUAL SCRAPER: Finished with code: ${code}`);
     }
     scraperProcess = null;
   });
 
   res.json({ 
     success: true, 
-    message: "Scraper manual iniciado - Revisa los logs para seguir el progreso" 
+    message: "Manual scraper started - Check the logs to follow the progress" 
   });
 });
 
 // Endpoint para iniciar bot
 app.post("/api/bot/start", requireAuth, (req, res) => {
   if (botProcess) {
-    return res.json({ success: false, message: "Bot ya está ejecutándose" });
+    return res.json({ success: false, message: "Bot is already running" });
   }
 
-  broadcastLog("🤖 Starting bot de Telegram...");
+  broadcastLog("🤖 Starting Telegram bot...");
 
   botProcess = spawn("node", ["main.js"], {
     cwd: __dirname,
@@ -372,7 +372,7 @@ app.post("/api/bot/start", requireAuth, (req, res) => {
   });
 
   botProcess.on("close", (code) => {
-    broadcastLog(`🤖 Bot terminado con código: ${code}`);
+    broadcastLog(`Telegram bot finished with code: ${code}`);
     botProcess = null;
   });
 
@@ -383,11 +383,11 @@ app.post("/api/bot/start", requireAuth, (req, res) => {
 app.post("/api/bot/stop", requireAuth, (req, res) => {
   if (botProcess) {
     botProcess.kill("SIGTERM");
-    broadcastLog("⏹️ Bot de Telegram detenido");
+    broadcastLog("Telegram bot stopped");
     botProcess = null;
     res.json({ success: true, message: "Bot stopped" });
   } else {
-    res.json({ success: false, message: "Bot no está ejecutándose" });
+    res.json({ success: false, message: "Bot is not running" });
   }
 });
 
@@ -398,12 +398,12 @@ app.post("/api/video/generate", requireAuth, async (req, res) => {
   if (!image || !query) {
     return res.json({
       success: false,
-      message: "Image y query son requeridas",
+      message: "Image and query are required",
     });
   }
 
   const sessionId = `manual_${Date.now()}`;
-  broadcastLog(`🎬 Generación manual: ${image}@${query}`);
+  broadcastLog(`Manual Generation: ${image}@${query}`);
 
   try {
     // Importar módulo de script
@@ -414,10 +414,10 @@ app.post("/api/video/generate", requireAuth, async (req, res) => {
     const scriptData = await generarScript(query, sessionId);
 
     if (!scriptData.encontrado) {
-      broadcastLog("❌ No se encontraron data en RAG para esta query");
+      broadcastLog("No data found in RAG for this query");
       return res.json({
         success: false,
-        message: "No se encontraron data para esta query",
+        message: "No data found for this query",
       });
     }
 
@@ -431,15 +431,15 @@ app.post("/api/video/generate", requireAuth, async (req, res) => {
     });
 
     // Enviar script para aprobación
-    broadcastLog(`📝 SCRIPT GENERADO [${sessionId}]:`);
-    broadcastLog(`📊 PALABRAS: ${scriptData.palabras}`);
+    broadcastLog(`SCRIPT GENERATED [${sessionId}]:`);
+    broadcastLog(`WORDS: ${scriptData.palabras}`);
     broadcastLog(
-      `⏱️ DURACIÓN ESTIMADA: ${Math.floor(scriptData.palabras / 4)} seconds`
+      `ESTIMATED DURATION: ${Math.floor(scriptData.palabras / 4)} seconds`
     );
-    broadcastLog(`🤖 GENERADO CON: OpenAI + RAG`);
-    broadcastLog(`📚 FUENTES: ${scriptData.documents} documents`);
+    broadcastLog(`GENERATED WITH: OpenAI + RAG`);
+    broadcastLog(`SOURCES: ${scriptData.documents} documents`);
     broadcastLog("");
-    broadcastLog("❓ Revisa el script en la modal de aprobación");
+    broadcastLog("check the script in the approval modal");
 
     // Broadcast script approval event
     broadcastEvent({
@@ -458,10 +458,10 @@ app.post("/api/video/generate", requireAuth, async (req, res) => {
       script: scriptData.script,
       palabras: scriptData.palabras,
       needsApproval: true,
-      message: "Script generated - Requiere aprobación",
+      message: "Script generated - Requires approval",
     });
   } catch (error) {
-    broadcastLog(`❌ Error generando script: ${error.message}`);
+    broadcastLog(`❌ Error generating script: ${error.message}`);
     res.json({ success: false, message: error.message });
   }
 });
@@ -501,21 +501,21 @@ app.post(
       const sessionId = `custom_${Date.now()}`;
       const photoPath = uploadedFile.path;
 
-      broadcastLog(`📸 CUSTOM VIDEO GENERATION [${sessionId}]`);
+      broadcastLog(`CUSTOM VIDEO GENERATION [${sessionId}]`);
       broadcastLog(
-        `📁 Photo uploaded: ${uploadedFile.originalname} (${(
+        `Photo uploaded: ${uploadedFile.originalname} (${(
           uploadedFile.size / 1024
         ).toFixed(1)}KB)`
       );
-      broadcastLog(`💾 Saved as: ${uploadedFile.filename}`);
-      broadcastLog(`🔍 Query: "${query}"`);
+      broadcastLog(`Saved as: ${uploadedFile.filename}`);
+      broadcastLog(`Query: "${query}"`);
 
       // Importar módulo de script
       const { generarScript } = require("./modules/script-generator");
 
       // PASO 1: Procesar query natural y generar script
-      broadcastLog("🧠 Processing natural language query...");
-      broadcastLog("🤖 Consulting AI + RAG database...");
+      broadcastLog("Processing natural language query...");
+      broadcastLog("Consulting AI + RAG database...");
 
       // Procesar query natural - expandir términos de búsqueda
       let processedQuery = query.toLowerCase();
@@ -534,7 +534,7 @@ app.post(
         processedQuery += " Gaza Palestine Israel conflict war";
       }
 
-      broadcastLog(`🔄 Expanded query: "${processedQuery}"`);
+      broadcastLog(`Expanded query: "${processedQuery}"`);
 
       const scriptData = await generarScript(processedQuery, sessionId);
 
@@ -563,16 +563,16 @@ app.post(
       });
 
       // Enviar script para aprobación
-      broadcastLog(`📝 SCRIPT GENERATED [${sessionId}]:`);
-      broadcastLog(`📊 Words: ${scriptData.palabras}`);
+      broadcastLog(`SCRIPT GENERATED [${sessionId}]:`);
+      broadcastLog(`Words: ${scriptData.palabras}`);
       broadcastLog(
         `⏱️ Estimated duration: ${Math.floor(scriptData.palabras / 4)} seconds`
       );
-      broadcastLog(`🤖 Generated with: OpenAI + RAG`);
-      broadcastLog(`📚 Sources: ${scriptData.documents} documents`);
-      broadcastLog(`📸 Using custom photo: ${uploadedFile.originalname}`);
+      broadcastLog(`Generated with: OpenAI + RAG`);
+      broadcastLog(`Sources: ${scriptData.documents} documents`);
+      broadcastLog(`Using custom photo: ${uploadedFile.originalname}`);
       broadcastLog("");
-      broadcastLog("❓ Revisa el script en la modal de aprobación");
+      broadcastLog("Check the script in the approval modal");
 
       // Broadcast script approval event
       broadcastEvent({
@@ -610,7 +610,7 @@ app.post(
         }
       }
 
-      broadcastLog(`❌ Error in custom video generation: ${error.message}`);
+      broadcastLog(`Error in custom video generation: ${error.message}`);
       res.json({ success: false, message: error.message });
     }
   }
@@ -624,7 +624,7 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
   if (!session) {
     return res.json({
       success: false,
-      message: "Session no encontrada o expirada",
+      message: "Session not found or expired",
     });
   }
 
@@ -632,19 +632,19 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
   const now = Date.now();
   if (now - session.timestamp > 30 * 60 * 1000) {
     videoSessions.delete(sessionId);
-    return res.json({ success: false, message: "Session expirada (30 min)" });
+    return res.json({ success: false, message: "Session expired (30 min)" });
   }
 
   // Responder inmediatamente para que el frontend no se cuelgue
   res.json({
     success: true,
-    message: "Video initialized - Proceso puede tardar 8-10 minutes",
+    message: "Video initialized - Process may take 8-10 minutes",
   });
 
-  broadcastLog("✅ Script approved - Continuando con el proceso...");
-  broadcastLog(`📋 Debug: Session data:`, JSON.stringify(session, null, 2));
-  broadcastLog("⚠️  PROCESO LARGO - Esto tomará varios minutes");
-  broadcastLog("📋 Puedes seguir el progreso en estos logs");
+  broadcastLog("Script approved - continuing to video generation...");
+  broadcastLog(`Debug: Session data:`, JSON.stringify(session, null, 2));
+  broadcastLog("LONG PROCESS - This will take several minutes");
+  broadcastLog("You can follow the progress in these logs");
 
   try {
     // Importar módulos del sistema
@@ -653,9 +653,9 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
     const { procesarVideoCompleto } = require("./modules/video-creator");
 
     // PASO 2: Procesar audio e image en paralelo
-    broadcastLog("🔄 Starting procesos paralelos...");
-    broadcastLog("⏳ Audio: ~2 minutes (ElevenLabs + Hedra)");
-    broadcastLog("⏳ Image: ~30 seconds (Hedra upload)");
+    broadcastLog("Starting parallel processes...");
+    broadcastLog("Audio: ~2 minutes (ElevenLabs + Hedra)");
+    broadcastLog("Image: ~30 seconds (Hedra upload)");
 
     // Delay inicial para evitar rate limits
     await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -668,23 +668,23 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
         procesarImage(session.image, sessionId),
       ]);
     } catch (parallelError) {
-      broadcastLog(`❌ Error in procesos paralelos: ${parallelError.message}`);
+      broadcastLog(`Error in parallel processes: ${parallelError.message}`);
 
       if (parallelError.message.includes("429")) {
-        broadcastLog("💡 Límite de ElevenLabs alcanzado");
-        broadcastLog("🕐 Intenta de nuevo en 5-10 minutes");
+        broadcastLog("ElevenLab limit reached");
+        broadcastLog("Try again in 5-10 minutes");
       } else if (parallelError.message.includes("timeout")) {
-        broadcastLog("💡 Timeout en Hedra");
-        broadcastLog("🌐 Las APIs están lentas, intenta más tarde");
+        broadcastLog("Timeout in Hedra");
+        broadcastLog("APIs are slow, please try again later");
       }
 
       videoSessions.delete(sessionId);
       return;
     }
 
-    broadcastLog("✅ PROCESAMIENTO COMPLETADO:");
-    broadcastLog(`🔊 Audio: ${audioData.nameArchivo}`);
-    broadcastLog(`📸 Image: ${imageData.name}`);
+    broadcastLog("PROCESSING COMPLETED:");
+    broadcastLog(`Audio: ${audioData.nameArchivo}`);
+    broadcastLog(`Image: ${imageData.name}`);
 
     // Enviar imágenes para comparación en el dashboard
     clients.forEach((client) => {
@@ -705,39 +705,39 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
     if (imageData.dalleTransformation) {
       const status = imageData.dalleTransformation.status;
       if (status === "ok") {
-        broadcastLog(`🎨 ✅ DALL-E Transformation: SUCCESS`);
-        broadcastLog(`🎨 Original: ${imageData.dalleTransformation.original}`);
-        broadcastLog(`🎨 Transformed: ${imageData.finalImagePath}`);
+        broadcastLog(`DALL-E Transformation: SUCCESS`);
+        broadcastLog(`Original: ${imageData.dalleTransformation.original}`);
+        broadcastLog(`Transformed: ${imageData.finalImagePath}`);
       } else if (status === "disabled_by_flag") {
-        broadcastLog(`🎨 ⚠️ DALL-E Transformation: DISABLED by flag`);
-        broadcastLog(`🎨 Using original photo: ${imageData.archivo}`);
+        broadcastLog(`DALL-E Transformation: DISABLED by flag`);
+        broadcastLog(`Using original photo: ${imageData.archivo}`);
       } else if (status === "fallback_original") {
-        broadcastLog(`🎨 ⚠️ DALL-E Transformation: FAILED`);
-        broadcastLog(`🎨 Error: ${imageData.dalleTransformation.error}`);
-        broadcastLog(`🎨 Using original photo as fallback`);
+        broadcastLog(`DALL-E Transformation: FAILED`);
+        broadcastLog(`Error: ${imageData.dalleTransformation.error}`);
+        broadcastLog(`Using original photo as fallback`);
       }
     }
 
-    broadcastLog(`🎬 Audio Asset: ${audioData.audioAssetId}`);
-    broadcastLog(`📸 Image Asset: ${imageData.imageAssetId}`);
+    broadcastLog(`Audio Asset: ${audioData.audioAssetId}`);
+    broadcastLog(`Image Asset: ${imageData.imageAssetId}`);
     broadcastLog("");
-    broadcastLog("🔥 ¡ASSETS LISTOS! Procediendo a crear video...");
-    broadcastLog("🎬 Creando video final con Hedra...");
-    broadcastLog("⏳ Esta es la parte más lenta: 3-7 minutes");
-    broadcastLog("🤖 Hedra está creando presentadora con sync de labios");
+    broadcastLog("¡ASSETS LISTOS! Procediendo a crear video...");
+    broadcastLog("Creating final video with Hedra...");
+    broadcastLog("This is the slowest part: 3-7 minutes");
+    broadcastLog("Hedra is creating presenter with lip sync");
     broadcastLog(
-      "💡 El sistema esperará 3 minutes y luego verificará 8 veces (total ~7 min)"
+      "💡 The system will wait 3 minutes and then check 8 times (total ~7 min)"
     );
     broadcastLog(
-      '📊 Si Hedra está lento, el sistema intentará descargar "a la mala"'
+      'If Hedra is slow, the system will try to download the video as soon as it is ready'
     );
 
     // PASO 3: Crear video final
     let videoFinal;
 
     try {
-      broadcastLog("🚀 INICIANDO CREACIÓN DE VIDEO...");
-      broadcastLog("⚡ Llamando a procesarVideoCompleto()...");
+      broadcastLog("STARTING VIDEO CREATION...");
+      broadcastLog("Calling procesarVideoCompleto()...");
       broadcastLog(
         `📋 Debug: audioData.audioAssetId = ${audioData.audioAssetId}`
       );
@@ -754,13 +754,13 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       const processTime = Math.round((endTime - startTime) / 1000);
       videoFinal.duracionProceso = `${Math.floor(processTime / 60)}m ${processTime % 60}s`;
       
-      broadcastLog("🎯 procesarVideoCompleto() COMPLETADO");
-      broadcastLog(`⏱️ Tiempo total de proceso: ${videoFinal.duracionProceso}`);
+      broadcastLog("procesarVideoCompleto() COMPLETADO");
+      broadcastLog(`Tiempo total de proceso: ${videoFinal.duracionProceso}`);
       broadcastLog(
         `📋 Debug: videoFinal recibido - nameArchivo: ${videoFinal.nameArchivo}, tamaño: ${videoFinal.tamaño}`
       );
     } catch (videoError) {
-      broadcastLog(`❌ Error creando video final: ${videoError.message}`);
+      broadcastLog(`Error creando video final: ${videoError.message}`);
       
       // Logging más detallado para debugging
       if (videoError.stack) {

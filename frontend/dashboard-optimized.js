@@ -278,7 +278,7 @@ function conectarLogs() {
 
     // 3) COMPARACIÓN DE IMAGEN: mostrar bloque
     if (data.type === 'image_comparison') {
-      console.log('[SSE] image_comparison', data);
+      
       mostrarComparacionImagenes(data.originalPath, data.transformedPath);
       return;
     }
@@ -313,11 +313,11 @@ function conectarLogs() {
         // Also show the video in the modal
         if (window.Modals && window.Modals.showProgressVideo) {
           window.Modals.showProgressVideo(data);
-          window.Modals.addProgressLog(`📹 Subtitled video: ${data.videoName}`);
+          window.Modals.addProgressLog(`Subtitled video: ${data.videoName}`);
         }
       } else {
         // This is the normal video (first one) - just show it, no success message yet
-        console.log('📹 Normal video arrived - waiting for subtitled version...');
+        console.log('Normal video arrived - waiting for subtitled version...');
         
         // Update to step 4 (creating video complete, but not final yet)
         if (window.Modals && window.Modals.updateProgressStep) {
@@ -327,7 +327,7 @@ function conectarLogs() {
         // Show the video in modal
         setTimeout(() => {
           if (window.Modals && typeof window.Modals.showVideoDialog === 'function') {
-            console.log('🎬 Opening video modal...');
+            
             window.Modals.showVideoDialog(data);
           } else {
             console.error('❌ Modal system not available');
@@ -357,21 +357,18 @@ function mostrarComparacionImagenes(originalPath, transformedPath) {
     return;
   }
   
-  console.log('📷 Setting image comparison:');
-  console.log('   Original path received:', originalPath);
-  console.log('   Transformed path:', transformedPath);
-  
+    
   // IMPORTANTE: Para la imagen ORIGINAL, usar la del preview (la que subió el usuario)
   // porque originalPath puede ser una ruta temporal del servidor que ya no existe
   const previewImg = document.getElementById('previewImage');
   
   if (previewImg && previewImg.src && previewImg.style.display !== 'none') {
     // Usar la imagen del preview (que ya está cargada en el navegador)
-    console.log('📷 Using preview image for original (user uploaded photo)');
+    
     originalImg.src = previewImg.src;
   } else if (originalPath) {
     // Fallback: usar la ruta que vino del servidor
-    console.log('📷 Using server path for original');
+    
     originalImg.src = originalPath;
   }
   
@@ -383,7 +380,7 @@ function mostrarComparacionImagenes(originalPath, transformedPath) {
   
   // Force update progress modal image comparison if it's open
   if (window.Modals && window.Modals.forceUpdateImageComparison) {
-    console.log('🔄 Updating progress modal image comparison...');
+    
     window.Modals.forceUpdateImageComparison();
   }
 }
@@ -459,7 +456,7 @@ async function ejecutarScraper() {
     const result = await response.json();
     
     if (result.success) {
-      console.log('✅ Scraper started');
+      
     }
   } catch (error) {
     console.error('❌ Scraper error:', error);

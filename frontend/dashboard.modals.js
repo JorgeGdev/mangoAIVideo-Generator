@@ -288,10 +288,10 @@
         };
         
         cache.progressOriginalImage.onload = function() {
-          console.log('✅ Original default image loaded successfully');
+          
         };
         cache.progressTransformedImage.onload = function() {
-          console.log('✅ Transformed default image loaded successfully');
+          
         };
       }
     }
@@ -687,5 +687,5 @@
     hideSuccessMessage,
     resetForNewGeneration
   };
-  console.log('[modals] ready');
+  
 })();

@@ -301,40 +301,22 @@ function conectarLogs() {
         
       }
       
-      // Check if this is the subtitled version (FINAL step)
-      if (data.isSubtitled) {
-        
-        
-        // Update to final step and show success message
-        if (window.Modals && window.Modals.showSubtitledVideoComplete) {
-          window.Modals.showSubtitledVideoComplete();
-        }
-        
-        // Also show the video in the modal
-        if (window.Modals && window.Modals.showProgressVideo) {
-          window.Modals.showProgressVideo(data);
-          window.Modals.addProgressLog(`Subtitled video: ${data.videoName}`);
-        }
-      } else {
-        // This is the normal video (first one) - just show it, no success message yet
-        console.log('Normal video arrived - waiting for subtitled version...');
-        
-        // Update to step 4 (creating video complete, but not final yet)
-        if (window.Modals && window.Modals.updateProgressStep) {
-          window.Modals.updateProgressStep(4);
-        }
-
-        // Show the video in modal
-        setTimeout(() => {
-          if (window.Modals && typeof window.Modals.showVideoDialog === 'function') {
-            
-            window.Modals.showVideoDialog(data);
-          } else {
-            console.error('❌ Modal system not available');
-            alert('Video generated: ' + (data.videoPath || '(no path)'));
-          }
-        }, 1000);
+      // This is the final video - show success message
+      // Update to final step and show success message
+      if (window.Modals && window.Modals.updateProgressStep) {
+        window.Modals.updateProgressStep(5);
       }
+
+      // Show the video in modal
+      setTimeout(() => {
+        if (window.Modals && typeof window.Modals.showVideoDialog === 'function') {
+          window.Modals.showVideoDialog(data);
+          window.Modals.addProgressLog(`✅ Final video ready: ${data.videoName}`);
+        } else {
+          console.error('❌ Modal system not available');
+          alert('Video generated: ' + (data.videoPath || '(no path)'));
+        }
+      }, 1000);
       
       return;
     }
@@ -745,7 +727,7 @@ async function loadShowcaseVideos() {
       
       displayShowcaseVideos(randomVideos);
       
-      console.log(`✅ [Showcase] Loaded ${result.stats?.total || result.videos.length} total videos (${result.stats?.original || 0} original, ${result.stats?.subtitled || 0} subtitled)`);
+      console.log(`✅ [Showcase] Loaded ${result.stats?.total || result.videos.length} total videos`);
     } else {
       
       showShowcasePlaceholder();
@@ -766,10 +748,6 @@ function displayShowcaseVideos(videos) {
     const videoCard = document.createElement('div');
     videoCard.className = 'showcase-card';
     
-    // Add badge for subtitled videos
-    const subtitleBadge = video.isSubtitled || video.type === 'subtitled' ? 
-      '<div class="subtitle-badge">Subtitled</div>' : '';
-    
     videoCard.innerHTML = `
       <video 
         src="${video.path}" 
@@ -780,7 +758,6 @@ function displayShowcaseVideos(videos) {
         onloadedmetadata="this.currentTime=0"
         ontimeupdate="if(this.currentTime>=5){this.currentTime=0}"
       ></video>
-      ${subtitleBadge}
     `;
     
     showcaseGrid.appendChild(videoCard);

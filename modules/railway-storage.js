@@ -12,14 +12,12 @@ const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'p
 const STORAGE_CONFIG = {
   // En Railway usar /tmp (temporal), en local usar carpetas normales
   videos: isRailway ? '/tmp/videos' : './final_videos',
-  videosSubtitled: isRailway ? '/tmp/videos_subtitled' : './final_videos_subtitled', 
   audios: isRailway ? '/tmp/audios' : './generated_audios',
   images: isRailway ? '/tmp/images' : './images/modified',
   uploads: isRailway ? '/tmp/uploads' : './uploads',
   
   // URLs para servir archivos
   videoUrl: isRailway ? '/api/temp/videos' : '/final_videos',
-  videoSubtitledUrl: isRailway ? '/api/temp/videos_subtitled' : '/final_videos_subtitled',
   audioUrl: isRailway ? '/api/temp/audios' : '/generated_audios',
   imageUrl: isRailway ? '/api/temp/images' : '/images/modified',
 };
@@ -130,23 +128,22 @@ function getTempFileStats() {
 
 // Inicializar sistema de storage
 function initStorage() {
-  console.log('🏗️ Initializing storage system...');
-  console.log(`📍 Environment: ${isRailway ? 'Railway (Production)' : 'Local Development'}`);
+  
   
   ensureDirectories();
   
   if (isRailway) {
-    console.log('⚡ Railway mode: Using temporary storage with auto-cleanup');
+    
     
     // Limpieza periódica de archivos expirados (cada 10 minutos)
     setInterval(() => {
       cleanupExpiredFiles();
     }, 10 * 60 * 1000);
   } else {
-    console.log('💻 Local mode: Using persistent storage');
+    
   }
   
-  console.log('✅ Storage system initialized');
+  
   return STORAGE_CONFIG;
 }
 

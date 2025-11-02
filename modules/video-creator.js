@@ -10,6 +10,9 @@ const path = require("path");
 // RAILWAY STORAGE INTEGRATION
 const { STORAGE_CONFIG, isRailway } = require('./railway-storage');
 
+// TELEGRAM - Import ONCE at top to avoid multiple bot instances
+const { enviarMensaje, CHAT_ID } = require("./telegram-handler");
+
 // ====== ENV ======
 const HEDRA_API_KEY = process.env.HEDRA_API_KEY;
 
@@ -35,8 +38,6 @@ async function logAndNotify(sessionId, message, sendToTelegram = true) {
   if (!sendToTelegram) return;
 
   try {
-    // Lazy import to avoid cycles when not needed
-    const { enviarMensaje, CHAT_ID } = require("./telegram-handler");
     await enviarMensaje(CHAT_ID, fullMessage);
   } catch (error) {
     console.log("⚠️ Could not send to Telegram:", error.message);

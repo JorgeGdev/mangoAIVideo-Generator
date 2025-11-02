@@ -13,9 +13,7 @@ const isRailwayEnvironment = () => {
   
   const isRailway = !isLocal;
   
-  console.log(`🌍 Hostname: ${hostname}`);
-  console.log(`🚂 Is Railway: ${isRailway}`);
-  
+   
   return isRailway;
 };
 
@@ -49,7 +47,7 @@ function triggerRailwayDownload(videoData) {
   // Mostrar notificación de descarga
   showRailwayDownloadNotification(videoData.videoName);
   
-  console.log('✅ Railway download link clicked successfully');
+  
   return true;
 }
 
@@ -122,14 +120,9 @@ function handleVideoCompletionForRailway(eventData) {
     const downloadTriggered = triggerRailwayDownload(eventData);
     
     if (downloadTriggered) {
-      
-      
-      // Para video subtitulado, mostrar mensaje adicional
-      if (eventData.isSubtitled) {
-        
-      }
+      console.log('✅ Railway download triggered successfully');
     } else {
-      
+      console.log('❌ Failed to trigger Railway download');
     }
   }
 }

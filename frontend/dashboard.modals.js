@@ -392,33 +392,31 @@
         cache.progressVideo.play().catch(()=>{});
         addProgressLog("▶️ Video preview started (silent loop)");
         
-        // DON'T show success message here - it will be shown when subtitled video arrives
-        // Just update progress and show close button after delay
+        // Show final success message
         setTimeout(() => {
-          addProgressLog("✅ Video generated! Processing subtitles...");
-          addProgressLog("⏳ Waiting for subtitled version...");
+          addProgressLog("✅ Video generation completed!");
+          showVideoComplete();
           
-          // Show close button but DON'T show success message yet
+          // Show close button
           if (cache.progressCloseBtn) {
             cache.progressCloseBtn.style.display = 'block';
             cache.progressCloseBtn.style.animation = 'fadeIn 0.5s ease';
           }
           
-          // Update to step 4 (not final yet, waiting for subtitles)
-          updateProgressStep(4);
+          // Update to final step
+          updateProgressStep(5);
         }, 2000);
       }
     }, 100);
   }
 
-  // Called when subtitled video arrives (final step)
-  function showSubtitledVideoComplete() {
+  // Called when video is complete (final step)
+  function showVideoComplete() {
     wireProgressIfNeeded();
     
     // Update to final step
     updateProgressStep(5);
-    addProgressLog("🎉 Subtitled video ready!");
-    addProgressLog("✅ PROCESS COMPLETE - Both videos generated");
+    addProgressLog("✅ PROCESS COMPLETE - Video ready!");
     
     // Show success message after short delay
     setTimeout(() => {
@@ -681,7 +679,7 @@
     updateProgressStep, 
     addProgressLog,
     showProgressVideo,
-    showSubtitledVideoComplete,
+    showVideoComplete,
     forceUpdateImageComparison,
     showSuccessMessage,
     hideSuccessMessage,

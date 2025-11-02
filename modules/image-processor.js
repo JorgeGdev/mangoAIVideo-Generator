@@ -125,12 +125,11 @@ HARD CONSTRAINTS:
 - Photorealistic, cinematic look, warm natural colors, gentle bokeh newsroom OR cozy studio background (brand-neutral).
 
 WARDROBE VARIATION (pick ONE unisex outfit at random per generation; change ONLY clothing/accessories, never identity):
-A) Dark tailored blazer + fine-knit turtleneck (charcoal/navy) + subtle pocket square or no accessory.
-B) Crisp open-collar shirt (white/light blue) + textured blazer (grey) + minimal lapel pin.
-C) Minimalist top (cream/ivory) + soft-shoulder blazer (camel) + simple watch.
-D) Monochrome suit (mid-grey) + crew-neck knit (black) + discreet lapel mic.
-E) Powder-blue shirt + V-neck sweater (navy) + midnight blazer; no patterns.
-F) Black satin-lapel blazer + silk/satin top (ivory) + delicate chain or no jewelry.
+A) Crisp open-collar shirt (white/light blue) + textured blazer (grey) + minimal lapel pin.
+B) Minimalist top (cream/ivory) + soft-shoulder blazer (camel) + simple watch.
+C) Monochrome suit (mid-grey) + crew-neck knit (black) + discreet lapel mic.
+D) Powder-blue shirt + V-neck sweater (navy) + midnight blazer; no patterns.
+E) Black satin-lapel blazer + silk/satin top (ivory) + delicate chain or no jewelry.
 
 STYLING RULES:
 - Unisex, timeless elegance; no bold patterns, no logos, no hats/caps.
@@ -218,10 +217,9 @@ SET & BACKGROUND:
 WARDROBE (change clothing ONLY; pick ONE per generation, unisex, elegant):
 1) Open-collar shirt (white/light blue) + textured blazer (grey/black/navy).
 2) Minimalist top (ivory/cream) + camel blazer + simple watch.
-3) Dark tailored blazer + fine-knit turtleneck (charcoal/dark green).
-4) Monochrome suit (mid-grey) + black crew-neck knit + discreet lapel mic.
-5) Powder-blue shirt + navy V-neck sweater + midnight blazer.
-6) Black satin-lapel blazer + ivory silk/satin top.
+3) Monochrome suit (mid-grey) + black crew-neck knit + discreet lapel mic.
+4) Powder-blue shirt + navy V-neck sweater + midnight blazer.
+5) Black satin-lapel blazer + ivory silk/satin top.
 
 LIGHTING & CAMERA:
 - 45° soft key, gentle fill, subtle hair/rim; shallow depth; clean headroom for lower-third.

@@ -3,8 +3,6 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs').promises;
 const path = require('path');
 
-console.log('🔐 AUTH MANAGER INITIALIZED');
-
 const USERS_FILE = path.join(__dirname, '..', 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 

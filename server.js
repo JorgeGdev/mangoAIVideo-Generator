@@ -108,14 +108,7 @@ if (!isRailway) {
     }
   }));
 
-  app.use("/final_videos_subtitled", express.static(STORAGE_CONFIG.videosSubtitled, {
-    setHeaders: (res, filePath) => {
-      if (path.extname(filePath) === '.mp4') {
-        res.setHeader('Accept-Ranges', 'bytes');
-        res.setHeader('Content-Type', 'video/mp4');
-      }
-    }
-  }));
+
 }
 
 app.use(express.static("."));
@@ -139,7 +132,7 @@ let botProcess = null;
 let clients = []; // Para Server-Sent Events
 let videoSessions = new Map(); // Para sesiones de video pendientes
 
-console.log("🚀 EXPRESS SERVER STARTING...");
+
 
 // ================================
 // RUTAS DE AUTENTICACIÓN - NUEVAS
@@ -868,83 +861,7 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       );
     }
 
-    // ============================================================================
-    // PROCESAMIENTO AUTOMÁTICO DE SUBTÍTULOS (RAILWAY COMPATIBLE)
-    // ============================================================================
-    try {
-      broadcastLog("🎵 Iniciando procesamiento automático de subtítulos...");
-      
-      const { processVideoSubtitles } = require('./modules/subtitle-processor');
-      const videoFilePath = isRailway 
-        ? path.join(STORAGE_CONFIG.videos, videoFinal.nameArchivo)
-        : path.join(__dirname, "final_videos", videoFinal.nameArchivo);
-      
-      // Verificar que el video original existe
-      if (fs.existsSync(videoFilePath)) {
-        broadcastLog(`🎬 Procesando subtítulos para: ${videoFinal.nameArchivo}`);
-        
-        // Procesar subtítulos en background (no bloquear respuesta)
-        processVideoSubtitles(videoFilePath, sessionId)
-          .then((subtitleResult) => {
-            broadcastLog(`✅ SUBTÍTULOS COMPLETADOS: ${subtitleResult.subtitledVideo}`);
-            
-            // Enviar evento de video subtitulado completado
-            const subtitledVideoName = subtitleResult.subtitledVideoName;
-            const subtitledVideoPath = subtitleResult.subtitledVideo;
-            
-            // En Railway, registrar archivo subtitulado como temporal
-            if (isRailway) {
-              registerTempFile(subtitledVideoName, subtitledVideoPath, 'video_subtitled', 30);
-              broadcastLog(`⏰ Railway: Video subtitulado registrado para descarga temporal (30 min)`);
-              broadcastLog(`📁 Railway: Archivo subtitulado guardado en: ${subtitledVideoPath}`);
-              broadcastLog(`🔗 Railway: URL de descarga subtítulos: /api/temp/videos_subtitled/${subtitledVideoName}`);
-            }
-            
-            const subtitledVideoUrl = isRailway 
-              ? `/api/temp/videos_subtitled/${subtitledVideoName}`
-              : `/final_videos_subtitled/${subtitledVideoName}`;
-            
-            // Obtener tamaño real del archivo
-            let videoSizeBytes = 0;
-            try {
-              const stats = fs.statSync(subtitledVideoPath);
-              videoSizeBytes = stats.size;
-            } catch (err) {
-              console.log('Warning: Could not get subtitled video size');
-            }
-            
-            broadcastEvent({
-              type: 'video_completion',
-              videoPath: subtitledVideoUrl,
-              videoName: subtitledVideoName,
-              videoSize: videoSizeBytes,
-              sessionId: sessionId + '_subtitled',
-              isSubtitled: true,
-              originalVideo: videoFinal.nameArchivo,
-              timestamp: Date.now(),
-              isRailway: isRailway,
-              downloadUrl: isRailway ? subtitledVideoUrl : null,
-              autoDownload: isRailway
-            });
-            
-            broadcastLog(`📹 Video con subtítulos listo: ${subtitledVideoName} (${subtitleResult.size})`);
-            broadcastLog(`🎯 Ambas versiones disponibles (original + subtítulos)`);
-            
-            if (isRailway) {
-              broadcastLog(`🚂 Railway: Video subtitulado listo para descarga inmediata`);
-              broadcastLog(`💾 URL de descarga: ${subtitledVideoUrl}`);
-            }
-          })
-          .catch((subtitleError) => {
-            broadcastLog(`⚠️ Error en subtítulos (no crítico): ${subtitleError.message}`);
-            broadcastLog(`✅ Video original sigue disponible sin subtítulos`);
-          });
-      } else {
-        broadcastLog(`⚠️ Video original no encontrado para subtítulos: ${videoFilePath}`);
-      }
-    } catch (subtitleSetupError) {
-      broadcastLog(`⚠️ Error configurando subtítulos: ${subtitleSetupError.message}`);
-    }
+
 
     // ============================================================================
     // LIMPIEZA AUTOMÁTICA DE IMÁGENES TEMPORALES
@@ -1605,119 +1522,9 @@ app.get("/api/videos/random", (req, res) => {
   }
 });
 
-// NEW: Endpoints for subtitled videos
-// Endpoint para obtener videos con subtítulos
-app.get("/api/videos/subtitled", (req, res) => {
-  try {
-    const { getSubtitledVideos } = require('./modules/subtitle-processor');
-    
-    getSubtitledVideos()
-      .then(videos => {
-        console.log(`[Subtitled Videos API] Found ${videos.length} subtitled videos`);
-        
-        res.json({
-          success: true,
-          videos,
-          total: videos.length,
-        });
-      })
-      .catch(error => {
-        console.error("❌ [Subtitled Videos API] Error:", error);
-        res.json({
-          success: false,
-          message: "Error loading subtitled videos",
-          videos: [],
-        });
-      });
-  } catch (error) {
-    console.error("❌ [Subtitled Videos API] Error:", error);
-    res.json({
-      success: false,
-      message: "Error loading subtitled videos",
-      videos: [],
-    });
-  }
-});
 
-// Endpoint combinado que devuelve videos originales y con subtítulos
-app.get("/api/videos/combined", (req, res) => {
-  try {
-    const videosDir = path.join(__dirname, "final_videos");
-    const { getSubtitledVideos } = require('./modules/subtitle-processor');
 
-    // Videos originales
-    let originalVideos = [];
-    if (fs.existsSync(videosDir)) {
-      originalVideos = fs
-        .readdirSync(videosDir)
-        .filter((file) => file.toLowerCase().endsWith(".mp4"))
-        .map((file) => {
-          const filePath = path.join(videosDir, file);
-          const stats = fs.statSync(filePath);
-          return {
-            filename: file,
-            path: `/final_videos/${file}`,
-            size: Math.round(stats.size / (1024 * 1024)),
-            date: stats.mtime.toISOString(),
-            created: stats.birthtime,
-            title: file
-              .replace(".mp4", "")
-              .replace(/video_(\d{8})_(\d{6})/, "Video $1 $2"),
-            isSubtitled: false,
-            type: 'original'
-          };
-        });
-    }
 
-    // Videos con subtítulos
-    getSubtitledVideos()
-      .then(subtitledVideos => {
-        // Agregar tipo para diferenciar
-        const typedSubtitledVideos = subtitledVideos.map(video => ({
-          ...video,
-          type: 'subtitled'
-        }));
-
-        // Combinar y ordenar por fecha
-        const allVideos = [...originalVideos, ...typedSubtitledVideos]
-          .sort((a, b) => new Date(b.created || b.date) - new Date(a.created || a.date));
-
-        console.log(`🎥 [Combined Videos API] Found ${originalVideos.length} original + ${subtitledVideos.length} subtitled videos`);
-
-        res.json({
-          success: true,
-          videos: allVideos,
-          stats: {
-            total: allVideos.length,
-            original: originalVideos.length,
-            subtitled: subtitledVideos.length
-          }
-        });
-      })
-      .catch(error => {
-        console.error("❌ [Combined Videos API] Error with subtitled videos:", error);
-        
-        // Si falla subtítulos, devolver solo originales
-        res.json({
-          success: true,
-          videos: originalVideos,
-          stats: {
-            total: originalVideos.length,
-            original: originalVideos.length,
-            subtitled: 0
-          },
-          warning: "Could not load subtitled videos"
-        });
-      });
-  } catch (error) {
-    console.error("❌ [Combined Videos API] Error:", error);
-    res.json({
-      success: false,
-      message: "Error loading videos",
-      videos: [],
-    });
-  }
-});
 
 // Endpoint para limpiar logs
 app.post("/api/logs/clear", requireAuth, (req, res) => {
@@ -1798,59 +1605,7 @@ app.get('/api/temp/videos/:filename', (req, res) => {
   }
 });
 
-// Endpoint para descargar videos subtitulados temporales
-app.get('/api/temp/videos_subtitled/:filename', (req, res) => {
-  console.log(`🚂 Railway subtitled download request: ${req.params.filename}`);
-  
-  if (!isRailway) {
-    console.log('❌ Not in Railway environment');
-    return res.status(404).json({ error: 'Only available in Railway environment' });
-  }
-  
-  const { filename } = req.params;
-  console.log(`🔍 Looking for subtitled temp file: ${filename}`);
-  
-  const fileInfo = getTempFileInfo(filename);
-  
-  if (!fileInfo || fileInfo.type !== 'video_subtitled') {
-    console.log(`❌ Subtitled file info not found for: ${filename}`);
-    console.log('📋 Available temp files:', Object.keys(tempFileCache || {}));
-    return res.status(404).json({ error: 'Subtitled file not found or expired' });
-  }
-  
-  const filePath = fileInfo.path;
-  console.log(`📁 Subtitled file path: ${filePath}`);
-  
-  if (!fs.existsSync(filePath)) {
-    console.log(`❌ Physical subtitled file not found: ${filePath}`);
-    return res.status(404).json({ error: 'Physical file not found' });
-  }
-  
-  try {
-    const stat = fs.statSync(filePath);
-    const fileSize = stat.size;
-    
-    markAsDownloaded(filename);
-    
-    // Configurar headers para descarga CON CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
-    res.setHeader('Content-Type', 'video/mp4');
-    res.setHeader('Content-Length', fileSize);
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Accept-Ranges', 'bytes');
-    
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
-    
-    console.log(`📥 Railway: Subtitled video downloaded - ${filename}`);
-    
-  } catch (error) {
-    console.error(`❌ Railway subtitled download error: ${error.message}`);
-    res.status(500).json({ error: 'Download failed' });
-  }
-});
+
 
 // Endpoint para obtener estadísticas de archivos temporales (Railway)
 app.get('/api/temp/stats', (req, res) => {
@@ -1908,9 +1663,7 @@ app.get('/api/video/download/:type/:filename', (req, res) => {
     const { type, filename } = req.params;
     
     let videoDir;
-    if (type === 'subtitled') {
-      videoDir = path.join(__dirname, 'final_videos_subtitled');
-    } else if (type === 'normal') {
+    if (type === 'normal') {
       videoDir = path.join(__dirname, 'final_videos');
     } else {
       return res.status(400).json({ error: 'Invalid video type' });
@@ -1977,9 +1730,7 @@ app.get('/api/video/exists/:type/:filename', (req, res) => {
     const { type, filename } = req.params;
     
     let videoDir;
-    if (type === 'subtitled') {
-      videoDir = path.join(__dirname, 'final_videos_subtitled');
-    } else if (type === 'normal') {
+    if (type === 'normal') {
       videoDir = path.join(__dirname, 'final_videos');
     } else {
       return res.status(400).json({ error: 'Invalid video type' });
@@ -2168,18 +1919,9 @@ app.use((err, req, res, next) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`🌐 Server initialized at http://localhost:${PORT}`);
-  console.log("📋 Dashboard available in browser");
-  console.log("⚡ APIs ready to connect frontend with backend");
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 
-  broadcastLog("🌐 Servidor Express initialized");
-  broadcastLog("📋 Dashboard web disponible");
-  broadcastLog("⚡ System ready to use");
   
-  // RAILWAY CHECKS - Verificar soporte de FFmpeg para subtítulos
-  if (isRailway) {
-    checkFFmpegSupport();
-  }
   
   // Inicializar sistema de storage (Railway compatible)
   initStorage();
@@ -2188,7 +1930,7 @@ app.listen(PORT, () => {
   if (!isRailway) {
     setupVideoWatcher();
   } else {
-    broadcastLog("🚂 Railway mode: File watcher disabled (using temp storage)");
+    
   }
   
   // Iniciar scraper automático con horarios específicos
@@ -2200,12 +1942,11 @@ app.listen(PORT, () => {
 // ============================================================================
 function setupVideoWatcher() {
   const finalVideosPath = path.join(__dirname, 'final_videos');
-  const subtitledVideosPath = path.join(__dirname, 'final_videos_subtitled');
   
   console.log('📁 Setting up video file watcher...');
   
   // Watcher para final_videos
-  const watcher = chokidar.watch([finalVideosPath, subtitledVideosPath], {
+  const watcher = chokidar.watch([finalVideosPath], {
     ignored: /^\./, 
     persistent: true,
     ignoreInitial: true // Solo nuevos archivos, no los existentes
@@ -2215,20 +1956,19 @@ function setupVideoWatcher() {
     if (path.extname(filePath).toLowerCase() === '.mp4') {
       const videoName = path.basename(filePath);
       const videoStats = fs.statSync(filePath);
-      const isSubtitled = filePath.includes('final_videos_subtitled');
       
-      console.log(`🎬 New video detected: ${videoName} (${isSubtitled ? 'subtitled' : 'normal'})`);
+      console.log(`🎬 New video detected: ${videoName}`);
       
       // Generar evento de video completado
       setTimeout(() => {
         const videoData = {
           type: 'video_completion',
-          videoPath: isSubtitled ? `/final_videos_subtitled/${videoName}` : `/final_videos/${videoName}`,
+          videoPath: `/final_videos/${videoName}`,
           videoName: videoName,
           videoSize: videoStats.size,
           size: `${(videoStats.size / (1024 * 1024)).toFixed(2)} MB`,
           sessionId: 'auto_detected_' + Date.now(),
-          isSubtitled: isSubtitled
+          isSubtitled: false
         };
         
         // Enviar evento SSE a todos los clientes
@@ -2269,17 +2009,16 @@ let autoRAGStatus = {
 };
 
 function setupAutoRAG() {
-  console.log('📅 Setting up automatic RAG scraper...');
-  console.log('⏰ Scraper will run at: 06:00, 10:00, 14:00, 18:00 daily (Mexico City time)');
+  
   
   // Verificar timezone actual
   const currentTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  console.log(`🌍 Current system timezone: ${currentTZ}`);
+  
   
   // Si estamos en Railway/Production, asegurar que el timezone esté configurado
   if (process.env.NODE_ENV === 'production' && !process.env.TZ) {
     process.env.TZ = 'America/Mexico_City';
-    console.log('🔧 Setting TZ environment variable for Railway');
+    // Setting timezone for Railway
   }
   
   // Configurar horarios específicos: 6:00 AM, 10:00 AM, 2:00 PM, 6:00 PM
@@ -2316,26 +2055,17 @@ function setupAutoRAG() {
       scheduled: true
     });
     
-    console.log(`✅ Programado RAG automático: ${schedule.name} hrs (${schedule.time})`);
-    console.log(`   Cron timezone: America/Mexico_City`);
+    // Scheduled: ${schedule.name}
+    
   });
   
   // Calcular próxima ejecución
   calculateNextRun(schedules);
   
-  broadcastLog(`📅 RAG automático configurado: 06:00, 10:00, 14:00, 18:00 hrs (México)`);
-  broadcastLog(`🌍 Zona horaria: America/Mexico_City`);
-  broadcastLog(`⚡ El scraper manual sigue disponible en el dashboard`);
-  console.log('🎯 Automatic RAG scraper configured successfully');
-  console.log('💡 Manual scraper button remains functional');
+    
   
-  // Log de verificación de horarios
-  console.log('\n📋 VERIFICACIÓN DE HORARIOS:');
-  const now = new Date();
-  console.log(`🕐 Hora actual del sistema: ${now.toLocaleString()}`);
-  console.log(`🇲🇽 Hora actual México: ${now.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}`);
-  console.log(`🌍 UTC: ${now.toISOString()}`);
-  console.log('');
+  
+  // Timezone verification skipped
 }
 
 // Calcular próxima ejecución programada
@@ -2370,8 +2100,7 @@ function calculateNextRun(schedules) {
     }
     
     const nextRunDate = new Date(autoRAGStatus.nextScheduledRun);
-    console.log(`⏰ Próxima ejecución automática: ${nextRunDate.toLocaleString('es-MX')}`);
-    broadcastLog(`⏰ Próxima ejecución automática: ${nextRunDate.toLocaleString('es-MX')}`);
+    console.log(`⏰ Next auto-scraper: ${nextRunDate.toLocaleString('es-MX')}`);
     
   } catch (error) {
     console.error('Error calculando próxima ejecución:', error.message);
@@ -2538,43 +2267,7 @@ app.post("/api/rag/run-now", requireAuth, (req, res) => {
   });
 });
 
-// ============================================================================
-// RAILWAY FFMPEG CHECKS - Verificar soporte de filtros ASS y codecs
-// ============================================================================
-function checkFFmpegSupport() {
-  const ffmpeg = require('fluent-ffmpeg');
-  
-  console.log('🔧 Railway: Checking FFmpeg support for subtitles...');
-  
-  // Check filters
-  ffmpeg.getAvailableFilters((e, filters) => {
-    if (e) {
-      console.log('❌ FFmpeg filters error:', e.message);
-      broadcastLog('❌ Railway: Error checking FFmpeg filters');
-    } else {
-      const hasAssFilter = !!filters.ass;
-      console.log('🎭 Has ASS filter?', hasAssFilter ? '✅ YES' : '❌ NO');
-      broadcastLog(`🎭 Railway FFmpeg ASS filter: ${hasAssFilter ? 'SUPPORTED ✅' : 'NOT SUPPORTED ❌'}`);
-      
-      if (!hasAssFilter) {
-        console.log('⚠️  CRITICAL: ASS filter not available - subtitles may not work');
-        broadcastLog('⚠️  CRITICAL: Subtitles may not work without ASS filter');
-      }
-    }
-  });
 
-  // Check codecs
-  ffmpeg.getAvailableCodecs((e, codecs) => {
-    if (e) {
-      console.log('❌ FFmpeg codecs error:', e.message);
-      broadcastLog('❌ Railway: Error checking FFmpeg codecs');
-    } else {
-      const hasLibx264 = !!codecs.libx264;
-      console.log('🎥 Has libx264?', hasLibx264 ? '✅ YES' : '❌ NO');
-      broadcastLog(`🎥 Railway FFmpeg libx264: ${hasLibx264 ? 'SUPPORTED ✅' : 'NOT SUPPORTED ❌'}`);
-    }
-  });
-}
 
 // Manejo de cierre del servidor
 process.on("SIGINT", () => {

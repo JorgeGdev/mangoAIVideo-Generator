@@ -341,24 +341,24 @@ Fast impact opening with exclamation
 ✓ NO EMOJIS AT ALL - Text only
 ✓ Asking for opinions or comments
 
-🔥 EXAMPLES (65-70 words each):
+🔥 EXAMPLES (60-65 words each):
 
-EXAMPLE 1 - Political (68 words):
+EXAMPLE 1 - Political (60 words):
 "BREAKING! President announces major immigration policy shift affecting millions nationwide. The administration revealed comprehensive reform including pathway to citizenship for undocumented workers and expanded visa programs. Congressional leaders expressed mixed reactions while advocacy groups celebrate the historic decision as breakthrough legislation. What's your take on this policy change?"
 
-EXAMPLE 2 - International (67 words):
+EXAMPLE 2 - International (60 words):
 "URGENT! Peace negotiations reach critical breakthrough in ongoing conflict zone today. Diplomatic sources confirm ceasefire agreement after six months of intensive talks between warring factions. International observers will monitor implementation while humanitarian aid reaches affected populations immediately through secured corridors. Will this bring lasting peace to the region?"
 
 ⚠️ CRITICAL RULES - ZERO TOLERANCE:
 
-🕐 TIMING: EXACTLY 16 seconds speaking time (65-70 words)
-📊 COUNT: Manually verify word count before responding  
-📝 DATA: ONLY provided database information - NO additions
-🎯 FOCUS: Stick to requested topic "${query}" exclusively
-⚡ SPEED: 4.3 words per second maximum speaking rate
-🔒 STRUCTURE: Hook + Core + CTA - NO deviations
-❌ FORBIDDEN: Speculation, assumptions, external knowledge
-🚫 NO EMOJIS: Use only plain text - NO emojis anywhere
+TIMING: EXACTLY 16 seconds speaking time (65-70 words)
+COUNT: Manually verify word count before responding  
+DATA: ONLY provided database information - NO additions
+FOCUS: Stick to requested topic "${query}" exclusively
+SPEED: 4.3 words per second maximum speaking rate
+STRUCTURE: Hook + Core + CTA - NO deviations
+FORBIDDEN: Speculation, assumptions, external knowledge
+NO EMOJIS: Use only plain text - NO emojis anywhere
 
 AUDIO WILL HAVE: 2-second silence START + 16-second speech + 2-second silence END = 20 seconds total
 
@@ -423,7 +423,7 @@ Respond exactly:
 "Sorry, we don’t have news on [topic] at the moment. Stay tuned."
 
 📌 CRITICAL RULES
-- WORD COUNT: 75–80 words exactly
+- WORD COUNT: 60–65 words exactly
 - DURATION: Under 20 seconds
 - PRECISION: Database facts only
 - FORMAT: Single Hook + Core + CTA

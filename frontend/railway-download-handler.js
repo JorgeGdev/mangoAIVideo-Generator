@@ -120,9 +120,9 @@ function handleVideoCompletionForRailway(eventData) {
     const downloadTriggered = triggerRailwayDownload(eventData);
     
     if (downloadTriggered) {
-      console.log('✅ Railway download triggered successfully');
+      
     } else {
-      console.log('❌ Failed to trigger Railway download');
+      
     }
   }
 }

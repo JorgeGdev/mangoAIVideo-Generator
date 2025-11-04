@@ -1980,8 +1980,8 @@ function setupVideoWatcher() {
           }
         });
         
-        broadcastLog(`🎬 Auto-detected video: ${videoName} - Event sent to clients`);
-        console.log('📹 Auto-detected video data:', videoData);
+        broadcastLog(`Auto-detected video: ${videoName} - Event sent to clients`);
+        console.log('Auto-detected video data:', videoData);
       }, 500); // Small delay to ensure file is fully written
     }
   });

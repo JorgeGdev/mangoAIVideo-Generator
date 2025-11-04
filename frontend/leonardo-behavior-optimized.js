@@ -5,8 +5,12 @@
 let isLeonardoInitialized = false;
 
 document.addEventListener('DOMContentLoaded', function() {
-  if (isLeonardoInitialized) return;
+  if (isLeonardoInitialized) {
+    console.log('⚠️ Leonardo behavior already initialized, skipping');
+    return;
+  }
   isLeonardoInitialized = true;
+  console.log('✅ Leonardo behavior initialized');
   
   
   

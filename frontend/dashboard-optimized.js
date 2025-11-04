@@ -30,13 +30,19 @@ let carouselState = {
 // ============================================================================
 async function fetchCarouselNews() {
   try {
-    
+    console.log('📰 [Carousel] Fetching news...');
     
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
+    const timeout = setTimeout(() => {
+      console.log('⏰ [Carousel] Request timeout after 10s');
+      controller.abort();
+    }, 10000); // Increased to 10s timeout
     
     const response = await fetch("/api/news/carousel", {
-      signal: controller.signal
+      signal: controller.signal,
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
     });
     
     clearTimeout(timeout);
@@ -56,7 +62,11 @@ async function fetchCarouselNews() {
       showCarouselError();
     }
   } catch (error) {
-    console.error("❌ [Carousel] Error:", error.message);
+    if (error.name === 'AbortError') {
+      console.warn("⚠️ [Carousel] Request was cancelled/timeout");
+    } else {
+      console.error("❌ [Carousel] Error:", error.message);
+    }
     showCarouselError();
   }
 }
@@ -715,21 +725,21 @@ async function logout() {
 // ============================================================================
 async function loadShowcaseVideos() {
   try {
+    console.log('🎬 [Showcase] Loading videos...');
     
-    
-    const response = await fetch('/api/videos/combined');
+    const response = await fetch('/api/videos/showcase');
     const result = await response.json();
     
-    if (result.success && result.videos.length > 0) {
+    if (result.success && result.videos && result.videos.length > 0) {
       // Shuffle and select 4 random videos
       const shuffled = result.videos.sort(() => 0.5 - Math.random());
       const randomVideos = shuffled.slice(0, 4);
       
       displayShowcaseVideos(randomVideos);
       
-      console.log(`✅ [Showcase] Loaded ${result.stats?.total || result.videos.length} total videos`);
+      console.log(`✅ [Showcase] Loaded ${randomVideos.length} videos to display (${result.total || result.videos.length} total)`);
     } else {
-      
+      console.log('⚠️ [Showcase] No videos found or API returned empty result');
       showShowcasePlaceholder();
     }
   } catch (error) {

@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
   isLeonardoInitialized = true;
-  console.log('✅ Leonardo behavior initialized');
+  
   
   
   

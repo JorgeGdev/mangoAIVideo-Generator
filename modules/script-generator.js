@@ -274,7 +274,7 @@ ${doc.metadata?.country ? `País: ${doc.metadata.country}` : ""}
 
     return selectedResults;
   } catch (error) {
-    console.error("❌ [RAG] Error selecting best results:", error.message);
+    console.error("[RAG] Error selecting best results:", error.message);
     // Fallback: devolver los primeros 3 resultados
     return results.slice(0, 3);
   }
@@ -283,7 +283,7 @@ ${doc.metadata?.country ? `País: ${doc.metadata.country}` : ""}
 // Function para generar script con IA REAL + RAG
 async function generarScript(query, sessionId) {
   try {
-    console.log(`🤖 [${sessionId}] Starting generación con IA + RAG`);
+    console.log(`[${sessionId}] Starting generation with IA + RAG`);
 
     // PASO 1: Queryr RAG
     const documents = await queryrRAG(query);
@@ -295,7 +295,7 @@ async function generarScript(query, sessionId) {
     );
 
     if (documentsUnicos.length === 0) {
-      console.log(`❌ [${sessionId}] No hay documents en RAG`);
+      console.log(`[${sessionId}] No documents found in RAG`);
       return {
         script: `Sorry, we don’t have news on ${query} at the moment. Stay tuned.`,
         encontrado: false,

@@ -191,11 +191,11 @@ async function procesarPais(fuente, numerosPais) {
   
   try {
     // Read RSS
-    console.log(`Leyendo RSS de ${fuente.pais}...`);
+    console.log(`Reading RSS feed from ${fuente.pais}...`);
     const feed = await parser.parseURL(fuente.url);
     const noticias = feed.items.slice(0, 10);
     
-    console.log(`${noticias.length} noticias obtenidas de ${fuente.pais}`);
+    console.log(`${noticias.length} news articles obtained from ${fuente.pais}`);
     
     // Process in batches of 2 (proven formula)
     for (let lote = 0; lote < noticias.length; lote += 2) {
@@ -442,9 +442,9 @@ async function scraperRAGCompleto4Paises() {
   const horaFin = new Date();
   const tiempoTotal = Math.round((horaFin - horaStart) / 1000 / 60);
   
-  console.log('\n¡PROCESO ÉPICO COMPLETED!');
+  console.log('\nEPIC PROCESS COMPLETED!');
   console.log('='.repeat(70));
-  console.log(`Tiempo total: ${tiempoTotal} minutes`);
+  console.log(`Total Time: ${tiempoTotal} minutes`);
   console.log(`Countries processed: ${fuentesRSS.length}/4`);
   console.log(`Total articles: ${articulosTotales}/40`);
   console.log(`Articles successes: ${articulosSuccessfulsTotales}`);
@@ -462,7 +462,7 @@ async function scraperRAGCompleto4Paises() {
   
   
   // ENVIAR RESUMEN COMPLETO A TELEGRAM
-  console.log('\n📱 Sending full summary to Telegram...');
+  console.log('\nSending full summary to Telegram...');
   await enviarResumenTelegram(results, tiempoTotal, vectoresTotales);
   
   return {
@@ -484,14 +484,14 @@ console.log(`Platform: ${process.platform}`);
 // Verificar compatibilidad de Node.js
 const nodeMajorVersion = parseInt(process.version.split('.')[0].substring(1));
 if (nodeMajorVersion < 20) {
-  console.error('⚠️  WARNING: Node.js version is below 20. This may cause compatibility issues.');
-  console.error('⚠️  Recommended: Node.js v20 or higher');
-  console.error('⚠️  Current version:', process.version);
+  console.error('WARNING: Node.js version is below 20. This may cause compatibility issues.');
+  console.error('Recommended: Node.js v20 or higher');
+  console.error('Current version:', process.version);
 }
 
 scraperRAGCompleto4Paises()
   .then((result) => {
-    console.log(`\n✅ LEGENDARY SUCCESS!`);
+    console.log(`\nLEGENDARY SUCCESS!`);
     console.log(`${result.articulosSuccessfuls} articles → ${result.totalVectors} vectors`);
     console.log(`Completed in ${result.tiempoMinutos} minutes`);
     console.log(`multi-country RAG operational`);
@@ -500,18 +500,18 @@ scraperRAGCompleto4Paises()
     process.exit(0);
   })
   .catch(error => {
-    console.error('\n❌ ERROR:', error.message);
+    console.error('\nERROR:', error.message);
     console.error('Stack trace:', error.stack);
     
     // Diagnóstico específico para errores comunes
     if (error.message.includes('File is not defined')) {
-      console.error('\n🔧 DIAGNOSTIC: This error is caused by incompatible Node.js version');
-      console.error('🔧 SOLUTION: Update to Node.js v20 or higher');
-      console.error('🔧 Current version:', process.version);
+      console.error('\nDIAGNOSTIC: This error is caused by incompatible Node.js version');
+      console.error('SOLUTION: Update to Node.js v20 or higher');
+      console.error('Current version:', process.version);
     } else if (error.message.includes('fetch')) {
-      console.error('\n🔧 DIAGNOSTIC: Fetch API error - check network connection');
+      console.error('\nDIAGNOSTIC: Fetch API error - check network connection');
     } else if (error.message.includes('SUPABASE')) {
-      console.error('\n🔧 DIAGNOSTIC: Supabase connection error - check credentials');
+      console.error('\nDIAGNOSTIC: Supabase connection error - check credentials');
     }
     
     process.exit(1);

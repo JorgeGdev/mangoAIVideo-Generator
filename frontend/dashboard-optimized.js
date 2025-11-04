@@ -30,7 +30,7 @@ let carouselState = {
 // ============================================================================
 async function fetchCarouselNews() {
   try {
-    console.log('📰 [Carousel] Fetching news...');
+    
     
     const controller = new AbortController();
     const timeout = setTimeout(() => {
@@ -258,13 +258,13 @@ function conectarLogs() {
 
       // Update progress based on log content (only if progress modal is open)
       if (window.Modals && window.Modals.updateProgressStep && document.getElementById('progressDialog')?.open) {
-        if (data.log.includes('Script approved') || data.log.includes('Continuando con el proceso')) {
+        if (data.log.includes('Script approved') || data.log.includes('Continuing with the process')) {
           window.Modals.updateProgressStep(2); // Processing Audio (just approved)
-        } else if (data.log.includes('Audio: ~2 minutes') || data.log.includes('Starting procesos paralelos')) {
+        } else if (data.log.includes('Audio: ~2 minutes') || data.log.includes('Starting parallel processes')) {
           window.Modals.updateProgressStep(2); // Processing Audio
-        } else if (data.log.includes('PROCESAMIENTO COMPLETADO') || data.log.includes('ASSETS LISTOS')) {
+        } else if (data.log.includes('PROCESSING COMPLETED') || data.log.includes('ASSETS READY')) {
           window.Modals.updateProgressStep(3); // Processing Image
-        } else if (data.log.includes('INICIANDO CREACIÓN DE VIDEO') || data.log.includes('Creando video final')) {
+        } else if (data.log.includes('STARTING VIDEO CREATION') || data.log.includes('Creating final video')) {
           window.Modals.updateProgressStep(4); // Creating Video
         }
       }
@@ -281,7 +281,7 @@ function conectarLogs() {
       if (window.Modals && typeof window.Modals.showApprovalDialog === 'function') {
         window.Modals.showApprovalDialog(data.sessionId, data.script, data.query);
       } else {
-        alert('Script listo para revisión:\n\n' + (data.script || '(vacío)'));
+        alert('Script ready for review:\n\n' + (data.script || '(empty)'));
       }
       return;
     }
@@ -330,7 +330,7 @@ function conectarLogs() {
       
       return;
     }
-  };
+  }; 
 
   eventSource.onerror = function() {
     console.log('Log connection error');
@@ -725,7 +725,7 @@ async function logout() {
 // ============================================================================
 async function loadShowcaseVideos() {
   try {
-    console.log('🎬 [Showcase] Loading videos...');
+    
     
     const response = await fetch('/api/videos/showcase');
     const result = await response.json();
@@ -739,7 +739,7 @@ async function loadShowcaseVideos() {
       
       console.log(`✅ [Showcase] Loaded ${randomVideos.length} videos to display (${result.total || result.videos.length} total)`);
     } else {
-      console.log('⚠️ [Showcase] No videos found or API returned empty result');
+      
       showShowcasePlaceholder();
     }
   } catch (error) {

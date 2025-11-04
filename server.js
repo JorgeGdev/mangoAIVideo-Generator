@@ -25,12 +25,12 @@ const {
 // RAILWAY OPTIMIZATION - Memory and process management
 // ============================================================================
 process.on('uncaughtException', (err) => {
-  console.error('❌ Uncaught Exception:', err.message);
+  console.error('Uncaught Exception:', err.message);
   // Don't exit on Railway - just log
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   // Don't exit on Railway - just log
 });
 
@@ -714,7 +714,7 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
     broadcastLog(`Audio Asset: ${audioData.audioAssetId}`);
     broadcastLog(`Image Asset: ${imageData.imageAssetId}`);
     broadcastLog("");
-    broadcastLog("¡ASSETS LISTOS! Procediendo a crear video...");
+    broadcastLog("ASSETS READY! Proceeding to create the video...");
     broadcastLog("Creating final video with Hedra...");
     broadcastLog("This is the slowest part: 3-7 minutes");
     broadcastLog("Hedra is creating presenter with lip sync");
@@ -732,10 +732,10 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       broadcastLog("STARTING VIDEO CREATION...");
       broadcastLog("Calling procesarVideoCompleto()...");
       broadcastLog(
-        `📋 Debug: audioData.audioAssetId = ${audioData.audioAssetId}`
+        `Debug: audioData.audioAssetId = ${audioData.audioAssetId}`
       );
       broadcastLog(
-        `📋 Debug: imageData.imageAssetId = ${imageData.imageAssetId}`
+        `Debug: imageData.imageAssetId = ${imageData.imageAssetId}`
       );
       
       // Capturar tiempo de inicio
@@ -747,29 +747,29 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       const processTime = Math.round((endTime - startTime) / 1000);
       videoFinal.duracionProceso = `${Math.floor(processTime / 60)}m ${processTime % 60}s`;
       
-      broadcastLog("procesarVideoCompleto() COMPLETADO");
-      broadcastLog(`Tiempo total de proceso: ${videoFinal.duracionProceso}`);
+      broadcastLog("procesarVideoCompleto() COMPLETED");
+      broadcastLog(`Total process time: ${videoFinal.duracionProceso}`);
       broadcastLog(
-        `📋 Debug: videoFinal recibido - nameArchivo: ${videoFinal.nameArchivo}, tamaño: ${videoFinal.tamaño}`
+        `Debug: videoFinal received - nameArchivo: ${videoFinal.nameArchivo}, tamaño: ${videoFinal.tamaño}`
       );
     } catch (videoError) {
-      broadcastLog(`Error creando video final: ${videoError.message}`);
+      broadcastLog(`Error creating final video: ${videoError.message}`);
       
       // Logging más detallado para debugging
       if (videoError.stack) {
-        broadcastLog(`🔍 Stack trace: ${videoError.stack.split('\n')[0]}`);
+        broadcastLog(`Stack trace: ${videoError.stack.split('\n')[0]}`);
       }
 
       if (videoError.message.includes("Timeout")) {
-        broadcastLog("💡 El video puede estar aún procesándose en Hedra");
-        broadcastLog(`🆔 Revisa tu dashboard de Hedra manualmente`);
-        broadcastLog(`⏰ Intenta generar otro video en 5-10 minutos`);
+        broadcastLog("The video may still be processing in Hedra");
+        broadcastLog(`Check your Hedra dashboard manually`);
+        broadcastLog(`Try generating another video in 5-10 minutes`);
       } else if (videoError.message.includes("no completed")) {
-        broadcastLog("🔄 Hedra está procesando muy lento hoy");
-        broadcastLog(`💡 El video puede completarse en unos minutos más`);
+        broadcastLog("Hedra is processing very slowly today");
+        broadcastLog(`The video may be completed in a few more minutes`);
       } else if (videoError.message.includes("download")) {
-        broadcastLog("📥 Error en descarga - video generado pero no descargado");
-        broadcastLog(`🔧 Verifica conexión de red y espacio en disco`);
+        broadcastLog("Error downloading - video generated but not downloaded");
+        broadcastLog(`Check network connection and disk space`);
       }
 
       videoSessions.delete(sessionId);
@@ -777,19 +777,19 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
     }
 
     broadcastLog("");
-    broadcastLog("🎉 VIDEO COMPLETADO EXITOSAMENTE! 🎉");
-    broadcastLog(`📁 Archivo: ${videoFinal.nameArchivo}`);
-    broadcastLog(`📏 Tamaño: ${videoFinal.tamaño}`);
-    broadcastLog(`⏱️ Proceso total: ${videoFinal.duracionProceso}`);
-    broadcastLog(`📅 Completed: ${new Date().toLocaleTimeString()}`);
-    broadcastLog("📂 Ubicación: final_videos/");
-    broadcastLog("🚀 ¡Tu video está listo para usar!");
+    broadcastLog("VIDEO COMPLETED SUCCESSFULLY! 🎉");
+    broadcastLog(`File: ${videoFinal.nameArchivo}`);
+    broadcastLog(`Size: ${videoFinal.tamaño}`);
+    broadcastLog(`Total process: ${videoFinal.duracionProceso}`);
+    broadcastLog(`Completed: ${new Date().toLocaleTimeString()}`);
+    broadcastLog("Location: final_videos/");
+    broadcastLog("Your video is ready to use!");
 
     // ============================================================================
-    // ENVIAR EVENTO DE VIDEO COMPLETADO AL DASHBOARD (RAILWAY COMPATIBLE)
+    // SEND VIDEO COMPLETED EVENT TO DASHBOARD (RAILWAY COMPATIBLE)
     // ============================================================================
     try {
-      // Determinar rutas según el ambiente
+      // Determine paths based on environment
       const videoFilePath = isRailway 
         ? path.join(STORAGE_CONFIG.videos, videoFinal.nameArchivo)
         : path.join(__dirname, "final_videos", videoFinal.nameArchivo);
@@ -800,9 +800,9 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
       // En Railway, registrar archivo como temporal para descarga
       if (isRailway) {
         registerTempFile(videoFinal.nameArchivo, videoFilePath, 'video', 30);
-        broadcastLog(`⏰ Railway: Video registrado para descarga temporal (30 min)`);
-        broadcastLog(`📁 Railway: Archivo guardado en: ${videoFilePath}`);
-        broadcastLog(`🔗 Railway: URL de descarga: /api/temp/videos/${videoFinal.nameArchivo}`);
+        broadcastLog(`Railway: Video registered for temporary download (30 min)`);
+        broadcastLog(`Railway: File saved in: ${videoFilePath}`);
+        broadcastLog(`Railway: Download URL: /api/temp/videos/${videoFinal.nameArchivo}`);
       }
 
       // Calcular duración del proceso en segundos
@@ -822,10 +822,10 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
 
       // Broadcast video completion event to all connected clients
       broadcastLog(
-        `📡 ENVIANDO EVENTO video_completion a ${clients.length} clientes`
+        `SENDING video_completion EVENT TO ${clients.length} clients`
       );
       broadcastLog(
-        `📋 Datos del evento: videoPath=${videoUrl}, videoName=${videoFinal.nameArchivo}`
+        `Event data: videoPath=${videoUrl}, videoName=${videoFinal.nameArchivo}`
       );
 
       clients.forEach((client) => {
@@ -842,59 +842,59 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
             autoDownload: isRailway, // Indicar si debe auto-descargar
           };
           client.write(`data: ${JSON.stringify(eventData)}\n\n`);
-          broadcastLog(`✅ Evento enviado a cliente`);
+          broadcastLog(`Event sent to client`);
         } catch (error) {
-          broadcastLog(`❌ Error enviando evento a cliente: ${error.message}`);
+          broadcastLog(`Error sending event to client: ${error.message}`);
         }
       });
 
-      broadcastLog("📡 ✅ EVENTO DE VIDEO COMPLETADO ENVIADO AL DASHBOARD");
-      
+      broadcastLog("VIDEO COMPLETED EVENT SENT TO DASHBOARD");
+
       if (isRailway) {
-        broadcastLog("🚂 Railway: Video listo para descarga inmediata");
-        broadcastLog(`💾 URL de descarga: ${videoUrl}`);
+        broadcastLog("Railway: Video ready for immediate download");
+        broadcastLog(`Download URL: ${videoUrl}`);
       }
       
     } catch (eventError) {
       broadcastLog(
-        `⚠️ Error enviando evento (no crítico): ${eventError.message}`
+        `Error sending event (non-critical): ${eventError.message}`
       );
     }
 
 
 
     // ============================================================================
-    // LIMPIEZA AUTOMÁTICA DE IMÁGENES TEMPORALES
+    // AUTOMATIC CLEANUP OF TEMPORARY IMAGES
     // ============================================================================
-    broadcastLog("🧹 Iniciando limpieza de archivos temporales...");
+    broadcastLog("Starting cleanup of temporary files...");
 
     try {
-      // Limpiar imagen original de /uploads
+      // Clean original image from /uploads
       if (session.image && fs.existsSync(session.image)) {
         fs.unlinkSync(session.image);
-        broadcastLog(`✅ Eliminada imagen original: ${session.image}`);
+        broadcastLog(`Cleaned original image: ${session.image}`);
       }
 
-      // Limpiar imagen transformada de /images/modified
+      // Clean transformed image from /images/modified
       if (imageData.finalImagePath && fs.existsSync(imageData.finalImagePath)) {
         fs.unlinkSync(imageData.finalImagePath);
         broadcastLog(
-          `✅ Eliminada imagen transformada: ${imageData.finalImagePath}`
+          `Cleaned transformed image: ${imageData.finalImagePath}`
         );
       }
 
-      broadcastLog("✨ Limpieza completada - Solo queda el video final");
+      broadcastLog("Cleanup completed - Only the final video remains");
     } catch (cleanupError) {
       broadcastLog(
-        `⚠️ Error en limpieza (no crítico): ${cleanupError.message}`
+        `Error sending cleanup (non-critical): ${cleanupError.message}`
       );
     }
 
-    // Limpiar sesión
+    // Clean session
     videoSessions.delete(sessionId);
   } catch (error) {
-    broadcastLog(`❌ Error inesperado: ${error.message}`);
-    broadcastLog("🔧 Stack trace para debugging:");
+    broadcastLog(`Unexpected error: ${error.message}`);
+    broadcastLog("Stack trace for debugging:");
     broadcastLog(error.stack || "No stack available");
 
     videoSessions.delete(sessionId);
@@ -907,12 +907,12 @@ app.post("/api/video/reject/:sessionId", requireAuth, (req, res) => {
   const session = videoSessions.get(sessionId);
 
   if (!session) {
-    return res.json({ success: false, message: "Session no encontrada" });
+    return res.json({ success: false, message: "Session not found" });
   }
 
-  broadcastLog("❌ PROCESO CANCELADO");
-  broadcastLog("El script no fue aprobado.");
-  broadcastLog("Puedes intentar con otra query.");
+  broadcastLog("PROCESS CANCELLED");
+  broadcastLog("The script was not approved.");
+  broadcastLog("You can try with another query.");
 
   videoSessions.delete(sessionId);
 
@@ -1069,10 +1069,10 @@ function getAvailableImages() {
     }
 
     console.log(
-      `📸 [Carousel] Found ${images.length} images: ${images.join(", ")}`
+      `[Carousel] Found ${images.length} images: ${images.join(", ")}`
     );
   } catch (error) {
-    console.error("❌ [Images] Error reading images:", error.message);
+    console.error("[Images] Error reading images:", error.message);
   }
 
   return images;
@@ -1105,7 +1105,7 @@ app.get("/api/news/carousel", async (req, res) => {
       now - carouselNewsCache.lastUpdate < carouselNewsCache.CACHE_DURATION
     ) {
       console.log(
-        `📰 [Carousel] Returning cached news (age: ${Math.floor(
+        `[Carousel] Returning cached news (age: ${Math.floor(
           (now - carouselNewsCache.lastUpdate) / 1000 / 60
         )} minutes)`
       );
@@ -1121,7 +1121,7 @@ app.get("/api/news/carousel", async (req, res) => {
 
     // Cache expirado o vacío - buscar noticias nuevas
     console.log(
-      `📰 [Carousel] Cache expired/empty - fetching fresh news from RAG`
+      `[Carousel] Cache expired/empty - fetching fresh news from RAG`
     );
 
     const { createClient } = require("@supabase/supabase-js");
@@ -1137,7 +1137,7 @@ app.get("/api/news/carousel", async (req, res) => {
       try {
         // BUSCAR POR FUENTE/DOMINIO PRIMERO (más confiable que metadatos de país)
         console.log(
-          `🔍 [Carousel] Searching for ${countryCode} news from domain: ${config.domain}`
+          `[Carousel] Searching for ${countryCode} news from domain: ${config.domain}`
         );
 
         let countryNews = null;
@@ -1161,12 +1161,12 @@ app.get("/api/news/carousel", async (req, res) => {
         ) {
           countryNews = domainResult.data;
           console.log(
-            `✅ [Carousel] Found ${countryNews.length} news from ${config.source} domain`
+            `[Carousel] Found ${countryNews.length} news from ${config.source} domain`
           );
         } else {
           // 2. FALLBACK: Buscar por términos del país (menos confiable)
           console.log(
-            `⚠️ [Carousel] No domain matches for ${config.domain}, trying country terms...`
+            `[Carousel] No domain matches for ${config.domain}, trying country terms...`
           );
 
           const searchTerms = [
@@ -1187,7 +1187,7 @@ app.get("/api/news/carousel", async (req, res) => {
             if (!result.error && result.data && result.data.length > 0) {
               countryNews = result.data;
               console.log(
-                `✅ [Carousel] Found ${countryNews.length} news using country term: ${term}`
+                `[Carousel] Found ${countryNews.length} news using country term: ${term}`
               );
               break;
             }
@@ -1196,7 +1196,7 @@ app.get("/api/news/carousel", async (req, res) => {
 
         if (!countryNews || countryNews.length === 0) {
           console.log(
-            `⚠️ [Carousel] No news found for ${countryCode} (tried: ${searchTerms.join(
+            `[Carousel] No news found for ${countryCode} (tried: ${searchTerms.join(
               ", "
             )})`
           );
@@ -1223,7 +1223,7 @@ app.get("/api/news/carousel", async (req, res) => {
             },
           ];
 
-          console.log(`📰 [Carousel] Using demo news for ${countryCode}`);
+          console.log(`[Carousel] Using demo news for ${countryCode}`);
         }
 
         // FILTRAR chunks incompletos + VALIDAR que correspondan al país correcto
@@ -1274,7 +1274,7 @@ app.get("/api/news/carousel", async (req, res) => {
 
           if (link && !isValidSource && !source.includes(config.source)) {
             console.log(
-              `⚠️ [Carousel] Skipping mismatched source: ${source} from ${link} (expected domains: ${allDomainsForCountry.join(
+              `[Carousel] Skipping mismatched source: ${source} from ${link} (expected domains: ${allDomainsForCountry.join(
                 ", "
               )})`
             );
@@ -1329,7 +1329,7 @@ app.get("/api/news/carousel", async (req, res) => {
           const actualSource = metadata.source || "Unknown";
           const actualLink = metadata.link || "No link";
           console.log(
-            `📰 [Carousel] Adding ${countryCode} news: "${
+            `[Carousel] Adding ${countryCode} news: "${
               metadata.title || "No title"
             }" from ${actualSource} (${actualLink})`
           );
@@ -1347,10 +1347,10 @@ app.get("/api/news/carousel", async (req, res) => {
           });
         });
 
-        console.log(`✅ [Carousel] Found 2 news for ${countryCode}`);
+        console.log(`[Carousel] Found 2 news for ${countryCode}`);
       } catch (countryError) {
         console.error(
-          `❌ [Carousel] Error processing ${countryCode}:`,
+          `[Carousel] Error processing ${countryCode}:`,
           countryError.message
         );
       }
@@ -1358,7 +1358,7 @@ app.get("/api/news/carousel", async (req, res) => {
 
     // Verificar que tenemos al menos algunas noticias
     if (carouselNews.length === 0) {
-      console.log(`❌ [Carousel] No news found in database`);
+      console.log(`[Carousel] No news found in database`);
       return res.json({
         success: false,
         message: "No news available",
@@ -1374,7 +1374,7 @@ app.get("/api/news/carousel", async (req, res) => {
     carouselNewsCache.lastUpdate = now;
 
     console.log(
-      `✅ [Carousel] Fetched and cached ${shuffledNews.length} news items`
+      `[Carousel] Fetched and cached ${shuffledNews.length} news items`
     );
 
     res.json({
@@ -1386,7 +1386,7 @@ app.get("/api/news/carousel", async (req, res) => {
       ).toISOString(),
     });
   } catch (error) {
-    console.error(`❌ [Carousel] Unexpected error:`, error.message);
+    console.error(`[Carousel] Unexpected error:`, error.message);
     res.json({
       success: false,
       message: error.message,
@@ -1405,7 +1405,7 @@ app.get("/api/images/available", (req, res) => {
       count: images.length,
     });
   } catch (error) {
-    console.error("❌ [Images API] Error:", error);
+    console.error("[Images API] Error:", error);
     res.json({
       success: false,
       message: "Error loading images",
@@ -1457,7 +1457,7 @@ app.get("/api/videos/showcase", (req, res) => {
       total: allVideos.length,
     });
   } catch (error) {
-    console.error("❌ [Videos API] Error:", error);
+    console.error("[Videos API] Error:", error);
     res.json({
       success: false,
       message: "Error loading videos",
@@ -1504,7 +1504,7 @@ app.get("/api/videos/random", (req, res) => {
     const randomVideos = shuffled.slice(0, 4);
 
     console.log(
-      `📹 [Videos API] Found ${allVideos.length} videos, returning 4 random`
+      `[Videos API] Found ${allVideos.length} videos, returning 4 random`
     );
 
     res.json({
@@ -1513,7 +1513,7 @@ app.get("/api/videos/random", (req, res) => {
       totalVideos: allVideos.length,
     });
   } catch (error) {
-    console.error("❌ [Videos API] Error:", error);
+    console.error("[Videos API] Error:", error);
     res.json({
       success: false,
       message: "Error loading videos",
@@ -1528,7 +1528,7 @@ app.get("/api/videos/random", (req, res) => {
 
 // Endpoint para limpiar logs
 app.post("/api/logs/clear", requireAuth, (req, res) => {
-  broadcastLog("🗑️ Logs limpiados");
+  broadcastLog("Logs limpiados");
   res.json({ success: true });
 });
 
@@ -1540,7 +1540,7 @@ app.post("/api/news/clear-cache", requireAuth, (req, res) => {
     CACHE_DURATION: 2 * 60 * 60 * 1000,
   };
   broadcastLog(
-    "🗑️ Cache del carousel limpiado - próxima carga usará filtros mejorados"
+    "Carousel cache cleared - next load will use improved filters"
   );
   res.json({ success: true, message: "Carousel cache cleared" });
 });
@@ -1551,29 +1551,29 @@ app.post("/api/news/clear-cache", requireAuth, (req, res) => {
 
 // Endpoint para descargar videos temporales en Railway
 app.get('/api/temp/videos/:filename', (req, res) => {
-  console.log(`🚂 Railway download request: ${req.params.filename}`);
+  console.log(`Railway download request: ${req.params.filename}`);
   
   if (!isRailway) {
-    console.log('❌ Not in Railway environment');
+    console.log('Not in Railway environment');
     return res.status(404).json({ error: 'Only available in Railway environment' });
   }
   
   const { filename } = req.params;
-  console.log(`🔍 Looking for temp file: ${filename}`);
+  console.log(`Looking for temp file: ${filename}`);
   
   const fileInfo = getTempFileInfo(filename);
   
   if (!fileInfo) {
-    console.log(`❌ File info not found for: ${filename}`);
-    console.log('📋 Available temp files:', Object.keys(tempFileCache || {}));
+    console.log(`File info not found for: ${filename}`);
+    console.log('Available temp files:', Object.keys(tempFileCache || {}));
     return res.status(404).json({ error: 'File not found or expired' });
   }
   
   const filePath = fileInfo.path;
-  console.log(`📁 File path: ${filePath}`);
+  console.log(`File path: ${filePath}`);
   
   if (!fs.existsSync(filePath)) {
-    console.log(`❌ Physical file not found: ${filePath}`);
+    console.log(`Physical file not found: ${filePath}`);
     return res.status(404).json({ error: 'Physical file not found' });
   }
   
@@ -1600,7 +1600,7 @@ app.get('/api/temp/videos/:filename', (req, res) => {
     console.log(`📥 Railway: Video downloaded - ${filename}`);
     
   } catch (error) {
-    console.error(`❌ Railway download error: ${error.message}`);
+    console.error(`Railway download error: ${error.message}`);
     res.status(500).json({ error: 'Download failed' });
   }
 });
@@ -1628,12 +1628,12 @@ app.get('/api/temp/stats', (req, res) => {
 
 // Endpoint de debug para ver archivos temporales disponibles
 app.get('/api/debug/temp-files', (req, res) => {
-  console.log('🔍 Debug: Listing temporary files...');
+  console.log('Debug: Listing temporary files...');
   
   const stats = getTempFileStats();
   const tempCacheEntries = Array.from(tempFileCache.entries() || []);
   
-  console.log('📋 Current temp files:', tempCacheEntries.length);
+  console.log('Current temp files:', tempCacheEntries.length);
   
   res.json({
     environment: isRailway ? 'Railway' : 'Local',
@@ -1673,7 +1673,7 @@ app.get('/api/video/download/:type/:filename', (req, res) => {
     
     // Verificar que el archivo existe
     if (!fs.existsSync(videoPath)) {
-      console.log(`❌ Video not found: ${videoPath}`);
+      console.log(`Video not found: ${videoPath}`);
       return res.status(404).json({ error: 'Video not found' });
     }
     
@@ -1716,10 +1716,10 @@ app.get('/api/video/download/:type/:filename', (req, res) => {
       fs.createReadStream(videoPath).pipe(res);
     }
     
-    console.log(`📥 Video download: ${filename} (${type})`);
+    console.log(`Video download: ${filename} (${type})`);
     
   } catch (error) {
-    console.error(`❌ Video download error: ${error.message}`);
+    console.error(`Video download error: ${error.message}`);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1752,7 +1752,7 @@ app.get('/api/video/exists/:type/:filename', (req, res) => {
     }
     
   } catch (error) {
-    console.error(`❌ Video exists check error: ${error.message}`);
+    console.error(`Video exists check error: ${error.message}`);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1782,20 +1782,20 @@ app.post("/api/test/simulate-video", requireAuth, async (req, res) => {
       if (fs.existsSync(sourceVideo)) {
         fs.copyFileSync(sourceVideo, destinationVideo);
         videoCreated = true;
-        broadcastLog(`🧪 Test: Video simulado copiado - ${newVideoName}`);
+        broadcastLog(`Test: Video simulado copiado - ${newVideoName}`);
       } else {
         // Crear video de prueba mínimo (100KB de datos dummy)
         const dummyVideoData = Buffer.alloc(100 * 1024, 0); // 100KB dummy data
         fs.writeFileSync(destinationVideo, dummyVideoData);
         videoCreated = true;
-        broadcastLog(`🧪 Test: Video dummy creado - ${newVideoName} (100KB)`);
+        broadcastLog(`Test: Video dummy creado - ${newVideoName} (100KB)`);
       }
       
       if (videoCreated) {
         // En Railway, registrar archivo temporal
         if (isRailway) {
           registerTempFile(newVideoName, destinationVideo, 'video', 30);
-          broadcastLog(`⏰ Railway: Test video registrado para descarga temporal`);
+          broadcastLog(`Railway: Test video registrado para descarga temporal`);
         }
         
         // Simular el evento de video completado
@@ -1823,17 +1823,17 @@ app.post("/api/test/simulate-video", requireAuth, async (req, res) => {
           clients.forEach(client => {
             try {
               client.write(`data: ${JSON.stringify(videoData)}\n\n`);
-              console.log('✅ Test video completion event sent to client');
+              console.log('Test video completion event sent to client');
             } catch (e) {
-              console.log('Error enviando test event:', e.message);
+              console.log('Error sending test event:', e.message);
             }
           });
           
-          broadcastLog(`🎬 Test: Evento video_completion enviado para ${newVideoName}`);
-          console.log('📹 Test video data sent:', videoData);
+          broadcastLog(`Test: Event video_completion sent for ${newVideoName}`);
+          console.log('Test video data sent:', videoData);
           
           if (isRailway) {
-            broadcastLog(`🚂 Railway: Test video ready for download at ${videoPath}`);
+            broadcastLog(`Railway: Test video ready for download at ${videoPath}`);
           }
           
         }, 1000);
@@ -1896,7 +1896,7 @@ app.get("/admin.html", requireAuth, requireAdmin, (req, res) => {
   // Doble verificación de seguridad
   if (req.user.role !== "admin") {
     broadcastLog(
-      `❌ Access denied al panel admin: ${req.user.username} (${req.user.role})`
+      `Access denied al panel admin: ${req.user.username} (${req.user.role})`
     );
     return res.status(403).json({
       success: false,
@@ -1904,7 +1904,7 @@ app.get("/admin.html", requireAuth, requireAdmin, (req, res) => {
     });
   }
 
-  broadcastLog(`✅ Acceso admin autorizado: ${req.user.username}`);
+  broadcastLog(`Acceso admin autorized: ${req.user.username}`);
   res.sendFile(path.join(__dirname, "admin.html"));
 });
 
@@ -2040,9 +2040,9 @@ function setupAutoRAG() {
         minute: '2-digit' 
       });
       
-      console.log(`🕐 AUTO RAG: Iniciando actualización programada a las ${schedule.name}`);
-      console.log(`🕐 Hora actual México: ${currentHourMX}, Hora sistema: ${now.toLocaleTimeString()}`);
-      broadcastLog(`🕐 AUTO RAG: Actualización programada iniciada (${schedule.name})`);
+      console.log(`AUTO RAG: Starting scheduled update at ${schedule.name}`);
+      console.log(`Mexico current time: ${currentHourMX}, System time: ${now.toLocaleTimeString()}`);
+      broadcastLog(`AUTO RAG: Scheduled update started (${schedule.name})`);
       
       // Actualizar stats
       autoRAGStatus.totalRuns++;
@@ -2100,7 +2100,7 @@ function calculateNextRun(schedules) {
     }
     
     const nextRunDate = new Date(autoRAGStatus.nextScheduledRun);
-    console.log(`⏰ Next auto-scraper: ${nextRunDate.toLocaleString('es-MX')}`);
+    console.log(`Next auto-scraper: ${nextRunDate.toLocaleString('es-MX')}`);
     
   } catch (error) {
     console.error('Error calculando próxima ejecución:', error.message);
@@ -2111,8 +2111,8 @@ function calculateNextRun(schedules) {
 function runAutoScraper(source = 'auto', scheduleName = null) {
   // Verificar si ya hay un scraper ejecutándose
   if (scraperProcess !== null) {
-    broadcastLog(`⚠️ AUTO RAG: Scraper ya está ejecutándose, saltando ejecución programada`);
-    console.log('⚠️ AUTO RAG: Skipping scheduled run - scraper already running');
+    broadcastLog(`AUTO RAG: Scraper is already running - skipping scheduled run`);
+    console.log('AUTO RAG: Skipping scheduled run - scraper already running');
     
     // Contar como fallida
     if (source.startsWith('scheduled_')) {
@@ -2124,9 +2124,9 @@ function runAutoScraper(source = 'auto', scheduleName = null) {
   try {
     const isScheduled = source.startsWith('scheduled_');
     const displayName = scheduleName ? `a las ${scheduleName} hrs` : `(${source})`;
-    
-    broadcastLog(`🚀 AUTO RAG: Iniciando scraper ${isScheduled ? 'AUTOMÁTICO' : 'MANUAL'} ${displayName}`);
-    console.log(`🚀 AUTO RAG: Starting ${isScheduled ? 'automatic' : 'manual'} scraper from ${source}`);
+
+    broadcastLog(`AUTO RAG: Starting scraper ${isScheduled ? 'AUTOMÁTICO' : 'MANUAL'} ${displayName}`);
+    console.log(`AUTO RAG: Starting ${isScheduled ? 'automatic' : 'manual'} scraper from ${source}`);
     
     scraperProcess = spawn("node", ["scraper-4-paises-final.js"], {
       cwd: __dirname,
@@ -2139,23 +2139,23 @@ function runAutoScraper(source = 'auto', scheduleName = null) {
         .split("\n")
         .filter((line) => line.trim());
       lines.forEach((line) => {
-        console.log(`📰 ${isScheduled ? 'AUTO' : 'MANUAL'} RAG: ${line}`);
-        broadcastLog(`📰 ${isScheduled ? 'AUTO' : 'MANUAL'} RAG: ${line}`);
+        console.log(`${isScheduled ? 'AUTO' : 'MANUAL'} RAG: ${line}`);
+        broadcastLog(`${isScheduled ? 'AUTO' : 'MANUAL'} RAG: ${line}`);
       });
     });
 
     scraperProcess.stderr.on("data", (data) => {
       const errorMsg = data.toString();
-      console.error(`❌ AUTO RAG Error: ${errorMsg}`);
-      broadcastLog(`❌ AUTO RAG Error: ${errorMsg}`);
+      console.error(`AUTO RAG Error: ${errorMsg}`);
+      broadcastLog(`AUTO RAG Error: ${errorMsg}`);
     });
 
     scraperProcess.on("close", (code) => {
       const success = code === 0;
       
       if (success) {
-        broadcastLog(`✅ ${isScheduled ? 'AUTO' : 'MANUAL'} RAG: Actualización completada exitosamente ${displayName}`);
-        console.log(`✅ AUTO RAG: Completed successfully from ${source}`);
+        broadcastLog(`${isScheduled ? 'AUTO' : 'MANUAL'} RAG: Update completed successfully ${displayName}`);
+        console.log(`AUTO RAG: Completed successfully from ${source}`);
         
         // Actualizar stats
         if (isScheduled) {
@@ -2163,8 +2163,8 @@ function runAutoScraper(source = 'auto', scheduleName = null) {
           autoRAGStatus.lastRunSuccess = true;
         }
       } else {
-        broadcastLog(`❌ ${isScheduled ? 'AUTO' : 'MANUAL'} RAG: Falló con código ${code} ${displayName}`);
-        console.error(`❌ AUTO RAG: Failed with code ${code} from ${source}`);
+        broadcastLog(`${isScheduled ? 'AUTO' : 'MANUAL'} RAG: Failed with code ${code} ${displayName}`);
+        console.error(`AUTO RAG: Failed with code ${code} from ${source}`);
         
         // Actualizar stats
         if (isScheduled) {
@@ -2176,7 +2176,7 @@ function runAutoScraper(source = 'auto', scheduleName = null) {
       scraperProcess = null;
       
       // Enviar notificación de finalización
-      broadcastLog(`📊 ${isScheduled ? 'AUTO' : 'MANUAL'} RAG: Base de datos actualizada, sistema listo para generar videos`);
+      broadcastLog(`${isScheduled ? 'AUTO' : 'MANUAL'} RAG: Database updated, system ready to generate videos`);
       
       // Recalcular próxima ejecución si es programada
       if (isScheduled) {
@@ -2191,8 +2191,8 @@ function runAutoScraper(source = 'auto', scheduleName = null) {
     });
 
     scraperProcess.on("error", (error) => {
-      console.error(`❌ AUTO RAG Process Error: ${error.message}`);
-      broadcastLog(`❌ AUTO RAG Process Error: ${error.message}`);
+      console.error(`AUTO RAG Process Error: ${error.message}`);
+      broadcastLog(`AUTO RAG Process Error: ${error.message}`);
       scraperProcess = null;
       
       // Actualizar stats
@@ -2203,8 +2203,8 @@ function runAutoScraper(source = 'auto', scheduleName = null) {
     });
     
   } catch (error) {
-    console.error(`❌ AUTO RAG: Error starting scraper: ${error.message}`);
-    broadcastLog(`❌ AUTO RAG: Error starting scraper: ${error.message}`);
+    console.error(`AUTO RAG: Error starting scraper: ${error.message}`);
+    broadcastLog(`AUTO RAG: Error starting scraper: ${error.message}`);
     scraperProcess = null;
     
     // Actualizar stats
@@ -2218,10 +2218,10 @@ function runAutoScraper(source = 'auto', scheduleName = null) {
 // Endpoint para configurar/ver horarios de RAG automático
 app.get("/api/rag/schedule", requireAuth, (req, res) => {
   const schedules = [
-    { time: '06:00', cron: '0 6 * * *', description: 'Actualización matutina' },
-    { time: '10:00', cron: '0 10 * * *', description: 'Actualización media mañana' },
-    { time: '14:00', cron: '0 14 * * *', description: 'Actualización tarde' },
-    { time: '18:00', cron: '0 18 * * *', description: 'Actualización vespertina' }
+    { time: '06:00', cron: '0 6 * * *', description: 'Morning update' },
+    { time: '10:00', cron: '0 10 * * *', description: 'Mid-morning update' },
+    { time: '14:00', cron: '0 14 * * *', description: 'Afternoon update' },
+    { time: '18:00', cron: '0 18 * * *', description: 'Evening update' }
   ];
   
   const status = {
@@ -2254,16 +2254,16 @@ app.post("/api/rag/run-now", requireAuth, (req, res) => {
   if (scraperProcess !== null) {
     return res.json({
       success: false,
-      message: "RAG scraper ya está ejecutándose. Espera a que termine."
+      message: "RAG scraper is already running. Please wait until it finishes."
     });
   }
   
-  broadcastLog("🔄 RAG: Ejecución manual solicitada por usuario");
+  broadcastLog("RAG: Manual execution requested by user");
   runAutoScraper('manual_dashboard', 'MANUAL');
   
   res.json({
     success: true,
-    message: "RAG scraper iniciado manualmente. Revisa los logs para seguir el progreso."
+    message: "RAG scraper started manually. Check the logs to follow the progress."
   });
 });
 

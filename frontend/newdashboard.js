@@ -204,13 +204,13 @@ function setupFormValidation() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('🎯 New Dashboard JS initializing...');
+  
   
   // Setup upload functionality
   setTimeout(() => {
     try {
       setupPhotoUpload();
-      console.log('✅ Photo upload setup complete');
+      
     } catch (error) {
       console.error('❌ Photo upload setup error:', error);
     }
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(() => {
     try {
       setupFormValidation();
-      console.log('✅ Form validation setup complete');
+      
     } catch (error) {
       console.error('❌ Form validation setup error:', error);
     }

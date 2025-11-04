@@ -72,7 +72,7 @@ async function sincronizarAssets(audioData, imageData, sessionId) {
       sincronizado: true,
     };
   } catch (error) {
-    await logAndNotify(sessionId, `❌ Asset sync error: ${error.message}`);
+    await logAndNotify(sessionId, `Asset sync error: ${error.message}`);
     throw error;
   }
 }
@@ -80,7 +80,7 @@ async function sincronizarAssets(audioData, imageData, sessionId) {
 // ====== CREATE VIDEO ======
 async function crearVideo(assetsSync, sessionId) {
   try {
-    await logAndNotify(sessionId, "🎬 Creating video with Hedra...");
+    await logAndNotify(sessionId, "Creating video with Hedra...");
 
     const videoRequest = {
       type: "video",
@@ -89,14 +89,14 @@ async function crearVideo(assetsSync, sessionId) {
       audio_id: assetsSync.audioAssetId,
       generated_video_inputs: {
         text_prompt:
-          "Professional news presenter speaking naturally. Preserve exact person identity and appearance. Natural expressions, eye contact, lip-sync. 9:16 vertical format, 20s max.",
+          "Professional news presenter speaking really seriously, looking directly at the camera ALWAYS. Preserve exact person identity and appearance. Natural expressions, eye contact, lip-sync. 9:16 vertical format, 20s max.",
         resolution: HEDRA_RESOLUTION,
         aspect_ratio: HEDRA_ASPECT_RATIO,
         duration_ms: HEDRA_DURATION_MS,
       },
     };
 
-    await logAndNotify(sessionId, `� Request: ${videoRequest.type} | Model: ${videoRequest.ai_model_id.substring(0, 8)}...`, false);
+    await logAndNotify(sessionId, `Request: ${videoRequest.type} | Model: ${videoRequest.ai_model_id.substring(0, 8)}...`, false);
 
     const response = await axios.post(
       "https://api.hedra.com/web-app/public/generations",
@@ -110,14 +110,14 @@ async function crearVideo(assetsSync, sessionId) {
       }
     );
 
-    await logAndNotify(sessionId, `� Hedra response received - Generation initiated`, false);
+    await logAndNotify(sessionId, `Hedra response received - Generation initiated`, false);
 
     // Extract both IDs - we need asset_id for status checks
     const generationId = response?.data?.id;
     const assetId = response?.data?.asset_id;
 
     if (!assetId && !generationId) {
-      await logAndNotify(sessionId, `❌ No generation/asset ID found in response: ${JSON.stringify(response.data)}`, false);
+      await logAndNotify(sessionId, `No generation/asset ID found in response: ${JSON.stringify(response.data)}`, false);
       throw new Error("Hedra did not return a generation or asset id");
     }
 
@@ -126,7 +126,7 @@ async function crearVideo(assetsSync, sessionId) {
 
     await logAndNotify(
       sessionId,
-      `🎬 Video initialized in Hedra: ${videoId} (generation: ${generationId}, asset: ${assetId})`
+      `Video initialized in Hedra: ${videoId} (generation: ${generationId}, asset: ${assetId})`
     );
 
     return {
@@ -136,7 +136,7 @@ async function crearVideo(assetsSync, sessionId) {
   } catch (error) {
     await logAndNotify(
       sessionId,
-      `❌ Error creating video: ${error.response?.status || error.message}`
+      `Error creating video: ${error.response?.status || error.message}`
     );
     throw new Error(`Error creating video: ${error.message}`);
   }
@@ -147,7 +147,7 @@ async function verificarStatusVideo(generationId, sessionId) {
   try {
     await logAndNotify(
       sessionId,
-      `🔍 Checking video status: ${generationId}`,
+      `Checking video status: ${generationId}`,
       false
     );
 
@@ -192,7 +192,7 @@ async function verificarStatusVideo(generationId, sessionId) {
       error: errorText,
     };
   } catch (error) {
-    await logAndNotify(sessionId, `❌ Error checking status: ${error.message}`);
+    await logAndNotify(sessionId, `Error checking status: ${error.message}`);
     throw error;
   }
 }
@@ -205,7 +205,7 @@ async function descargarVideo(videoUrl, sessionId) {
   while (attempt < MAX_DOWNLOAD_RETRIES) {
     try {
       attempt++;
-      await logAndNotify(sessionId, `📥 Downloading final video (attempt ${attempt}/${MAX_DOWNLOAD_RETRIES})...`);
+      await logAndNotify(sessionId, `Downloading final video (attempt ${attempt}/${MAX_DOWNLOAD_RETRIES})...`);
 
       const response = await axios.get(videoUrl, {
         responseType: "arraybuffer",
@@ -225,7 +225,7 @@ async function descargarVideo(videoUrl, sessionId) {
 
       await logAndNotify(
         sessionId,
-        `📊 Video downloaded successfully: ${response.data.byteLength} bytes`
+        `Video downloaded successfully: ${response.data.byteLength} bytes`
       );
 
       // Si llegamos aquí, la descarga fue exitosa - procesar y guardar
@@ -246,13 +246,13 @@ async function descargarVideo(videoUrl, sessionId) {
 
       await logAndNotify(
         sessionId,
-        `✅ Video saved: ${videoPath} (${videoSize} MB)`
+        `Video saved: ${videoPath} (${videoSize} MB)`
       );
-      await logAndNotify(sessionId, `🔍 File verified: ${stats.size} bytes`);
+      await logAndNotify(sessionId, `File verified: ${stats.size} bytes`);
       
       if (isRailway) {
-        await logAndNotify(sessionId, "🚂 Railway: Video stored in temporary location");
-        await logAndNotify(sessionId, "💾 Auto-download will be triggered after completion");
+        await logAndNotify(sessionId, "Railway: Video stored in temporary location");
+        await logAndNotify(sessionId, "Auto-download will be triggered after completion");
       }
 
       // 🎵 NUEVO: Generar automáticamente subtítulos (REMOVIDO - se hace en el servidor)
@@ -269,15 +269,15 @@ async function descargarVideo(videoUrl, sessionId) {
 
     } catch (downloadError) {
       if (attempt < MAX_DOWNLOAD_RETRIES) {
-        await logAndNotify(sessionId, `⚠️ Download attempt ${attempt} failed: ${downloadError.message}`);
-        await logAndNotify(sessionId, `🔄 Retrying in 10 seconds... (${MAX_DOWNLOAD_RETRIES - attempt} attempts left)`);
+        await logAndNotify(sessionId, `Download attempt ${attempt} failed: ${downloadError.message}`);
+        await logAndNotify(sessionId, `Retrying in 10 seconds... (${MAX_DOWNLOAD_RETRIES - attempt} attempts left)`);
         await new Promise(resolve => setTimeout(resolve, 10000)); // Esperar 10 segundos antes del retry
         continue; // Continuar con el siguiente intento
       } else {
         // Último intento falló
         await logAndNotify(
           sessionId,
-          `❌ All download attempts failed. Final error: ${downloadError.message}`
+          `All download attempts failed. Final error: ${downloadError.message}`
         );
         throw downloadError;
       }

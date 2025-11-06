@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
       setupPhotoUpload();
       
     } catch (error) {
-      console.error('❌ Photo upload setup error:', error);
+      console.error('Photo upload setup error:', error);
     }
   }, 100);
   
@@ -222,10 +222,10 @@ document.addEventListener('DOMContentLoaded', function() {
       setupFormValidation();
       
     } catch (error) {
-      console.error('❌ Form validation setup error:', error);
+      console.error('Form validation setup error:', error);
     }
   }, 200);
   
-  console.log('🎯 New Dashboard JS initialization complete');
+  
 });
 

@@ -240,7 +240,6 @@ app.get("/api/logs", (req, res) => {
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Cache-Control",
     "X-Accel-Buffering": "no" // Disable nginx buffering
@@ -251,7 +250,7 @@ app.get("/api/logs", (req, res) => {
 
   // Send initial connection confirmation
   try {
-    res.write(`data: ${JSON.stringify({ log: `[${new Date().toLocaleTimeString()}] ✅ Connected to server logs` })}\n\n`);
+    res.write(`data: ${JSON.stringify({ log: `[${new Date().toLocaleTimeString()}] Connected to server logs` })}\n\n`);
   } catch (error) {
     console.log('Error sending initial log:', error.message);
   }
@@ -559,7 +558,7 @@ app.post(
       broadcastLog(`SCRIPT GENERATED [${sessionId}]:`);
       broadcastLog(`Words: ${scriptData.palabras}`);
       broadcastLog(
-        `⏱️ Estimated duration: ${Math.floor(scriptData.palabras / 4)} seconds`
+        `Estimated duration: ${Math.floor(scriptData.palabras / 4)} seconds`
       );
       broadcastLog(`Generated with: OpenAI + RAG`);
       broadcastLog(`Sources: ${scriptData.documents} documents`);
@@ -719,7 +718,7 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
     broadcastLog("This is the slowest part: 3-7 minutes");
     broadcastLog("Hedra is creating presenter with lip sync");
     broadcastLog(
-      "💡 The system will wait 3 minutes and then check 8 times (total ~7 min)"
+      "The system will wait 3 minutes and then check 8 times (total ~7 min)"
     );
     broadcastLog(
       'If Hedra is slow, the system will try to download the video as soon as it is ready'
@@ -777,7 +776,7 @@ app.post("/api/video/approve/:sessionId", requireAuth, async (req, res) => {
     }
 
     broadcastLog("");
-    broadcastLog("VIDEO COMPLETED SUCCESSFULLY! 🎉");
+    broadcastLog("VIDEO COMPLETED SUCCESSFULLY!");
     broadcastLog(`File: ${videoFinal.nameArchivo}`);
     broadcastLog(`Size: ${videoFinal.tamaño}`);
     broadcastLog(`Total process: ${videoFinal.duracionProceso}`);

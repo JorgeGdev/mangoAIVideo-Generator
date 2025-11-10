@@ -118,9 +118,9 @@ async function transformWithGemini(imagePath, sessionId) {
 Task: Transform the provided portrait into a professional news/podcast host.
 
 HARD CONSTRAINTS:
-- Preserve the person’s exact identity: same face, features, skin tone, age, hairstyle/facial hair exactly as source.
+- Preserve the person's exact identity: same face, features, skin tone, age, hairstyle/facial hair exactly as source.
 - Gender-neutral handling: do NOT change perceived gender; keep all inherent traits as in the original portrait.
-- Vertical 9:16 only. Medium close-up (shoulders to top of head), eyeline near upper third.
+- Exact dimensions: 1080x1920 pixels (vertical 9:16 format). Medium close-up (shoulders to top of head), eyeline near upper third.
 - Broadcast microphone visible to one side (not blocking the mouth).
 - Photorealistic, cinematic look, warm natural colors, gentle bokeh newsroom OR cozy studio background (brand-neutral).
 
@@ -145,10 +145,10 @@ NEGATIVE GUIDANCE:
 - Do not alter face shape, age, skin tone, hair color/length, or body type.
 - Do not feminize/masculinize features; no contouring that changes identity.
 - No duplicate people, no text/watermarks, no props blocking the mouth.
-- No 16:9 or 3:2—strict 9:16 only.
+- No 16:9 or 3:2—strict 1080x1920 (9:16) only.
 
 OUTPUT:
-One photorealistic vertical 9:16 image of the SAME person as an elegant, professional news/podcast host, with wardrobe changed per the selected outfit and everything else preserved.
+One photorealistic vertical 1080x1920 (9:16) image of the SAME person as an elegant, professional news/podcast host, with wardrobe changed per the selected outfit and everything else preserved.
 `.trim();
 
   const contents = [
@@ -205,9 +205,9 @@ async function transformWithOpenAI(imagePath, sessionId) {
 Goal: Transform the provided portrait into a professional news/podcast host.
 
 HARD CONSTRAINTS:
-- Preserve the person’s exact identity: same face, features, skin tone, age, hairstyle/facial hair.
+- Preserve the person's exact identity: same face, features, skin tone, age, hairstyle/facial hair.
 - Preserve original gender presentation; do not masculinize/feminize or change body type.
-- Strict vertical 9:16 only. Medium close-up (shoulders to head), eye level, eyes near upper third.
+- Exact dimensions: 1080x1920 pixels (vertical 9:16 format). Medium close-up (shoulders to head), eye level, eyes near upper third.
 - Broadcast microphone visible to the side, never blocking the mouth.
 - Photorealistic, cinematic, warm natural color grade; natural skin texture.
 
@@ -227,10 +227,10 @@ LIGHTING & CAMERA:
 NEGATIVE GUIDANCE:
 - Do not alter face shape, age, skin tone, hair color/length; no gender changes.
 - No hats/caps, no bold patterns, no large jewelry, no logos, no text/watermarks.
-- No 16:9 or 3:2; enforce 9:16 only.
+- No 16:9 or 3:2; enforce 1080x1920 (9:16) only.
 
 OUTPUT:
-One photorealistic vertical 9:16 image of the SAME person as an elegant news/podcast host, with wardrobe varied as selected and identity fully preserved.
+One photorealistic vertical 1080x1920 (9:16) image of the SAME person as an elegant news/podcast host, with wardrobe varied as selected and identity fully preserved.
 `.trim();
 
   // Use OpenAI Images Edit (multipart form-data)

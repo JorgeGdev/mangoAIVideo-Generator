@@ -89,7 +89,7 @@ async function crearVideo(assetsSync, sessionId) {
       audio_id: assetsSync.audioAssetId,
       generated_video_inputs: {
         text_prompt:
-          "Professional news presenter speaking really seriously, looking directly at the camera ALWAYS. Preserve exact person identity and appearance. Natural expressions, eye contact, lip-sync. 9:16 vertical format, 20s max.",
+          "Professional news presenter speaking really seriously, looking directly at the camera ALWAYS. Preserve exact person identity and appearance. Natural expressions, eye contact, lip-sync. Vertical 1080x1920 (9:16 format), 20s max.",
         resolution: HEDRA_RESOLUTION,
         aspect_ratio: HEDRA_ASPECT_RATIO,
         duration_ms: HEDRA_DURATION_MS,

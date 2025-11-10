@@ -44,7 +44,7 @@ const fuentesRSS = [
     bandera: '🇬🇧'
   },
   {
-    url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
+    url: 'https://feeds.npr.org/1004/rss.xml',
     seccion: 'international',
     pais: 'USA',
     bandera: '🇺🇸'

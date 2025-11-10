@@ -317,57 +317,61 @@ CONTENIDO: ${doc.content}
       .join("\n\n");
 
     // PASO 3: ULTRA-STRICT English Prompt for 20-Second Videos
-    const promptOptimizado = `You are a professional news presenter. Create a script of EXACTLY 60-65 words for 20-second videos with 2-second silence padding.
+    const promptOptimizado = `You are a professional breaking news anchor for international television. Create a script of EXACTLY 60-65 words for a 20-second news bulletin.
 
-⏱️ CRITICAL TIMING CONSTRAINT: MAXIMUM 16 seconds of speech (20 seconds total - 4 seconds silence)
-📏 WORD LIMIT: 60-65 words MAXIMUM (4.3 words per second average)
+⏱️ CRITICAL TIMING: MAXIMUM 16 seconds of speech (20 seconds total with 2-second silence padding at start and end)
+📝 WORD LIMIT: 60-65 words MAXIMUM (3.75-4 words per second)
 
 CRITICAL: USE ONLY THE PROVIDED NEWS DATA BELOW. Topic: "${query}".
 
-MANDATORY STRUCTURE (60-65 words total):
-🎣 HOOK (0-3 seconds): 12-15 words
-Fast impact opening with exclamation
-✓ Main subject from database only
-✓ HIGH-ENERGY words: BREAKING!, EXCLUSIVE!, URGENT!
+MANDATORY NEWS STRUCTURE (60-65 words total):
 
-📰 CORE (3-10 seconds): 35-40 words  
-✓ Essential facts from database only
-✓ Key details, numbers, locations from provided data
-✓ NO speculation or added information
-✓ Direct, concise reporting
+📰 LEDE (0-4 seconds): 15-20 words
+The most important information first: WHO did WHAT, WHEN, and WHERE
+- Start with location or source if relevant
+- Use present perfect or simple past tense
+- Be direct and factual
 
-💬 CTA (13-16 seconds): 8-10 words
-✓ Quick engagement question
-✓ NO EMOJIS AT ALL - Text only
-✓ Asking for opinions or comments
+📊 DETAILS (4-14 seconds): 35-40 words  
+Essential context and supporting facts from database only:
+- Key figures, statistics, or quotes from officials
+- Immediate consequences or implications
+- Background information if space permits
+- Maintain chronological or logical order
 
-🔥 EXAMPLES (60-65 words each):
+🔚 CLOSING (14-16 seconds): 5-10 words
+Brief statement of what comes next or current status
+- "More details expected soon"
+- "Authorities continue investigating"
+- "The situation remains developing"
+- NO questions, NO calls to action
 
-EXAMPLE 1 - Political (60 words):
-"BREAKING! President announces major immigration policy shift affecting millions nationwide. The administration revealed comprehensive reform including pathway to citizenship for undocumented workers and expanded visa programs. Congressional leaders expressed mixed reactions while advocacy groups celebrate the historic decision as breakthrough legislation. What's your take on this policy change?"
+🎯 EXAMPLES (60-65 words each):
 
-EXAMPLE 2 - International (60 words):
-"URGENT! Peace negotiations reach critical breakthrough in ongoing conflict zone today. Diplomatic sources confirm ceasefire agreement after six months of intensive talks between warring factions. International observers will monitor implementation while humanitarian aid reaches affected populations immediately through secured corridors. Will this bring lasting peace to the region?"
+EXAMPLE 1 - Political News (62 words):
+"President Biden has announced sweeping immigration reforms affecting over three million undocumented workers. The executive order, signed this morning at the White House, creates new pathways to citizenship and expands visa programs for essential workers. Republican lawmakers have already pledged legal challenges, while immigrant advocacy groups are calling it the most significant policy shift in decades. The changes take effect next month."
+
+EXAMPLE 2 - International Crisis (64 words):
+"A magnitude seven-point-two earthquake has struck southern Turkey, leaving at least forty people dead and hundreds injured. The quake hit at three AM local time, collapsing dozens of buildings in the city of Adana. Rescue teams are searching through rubble as aftershocks continue. Turkey's president has declared a state of emergency in the affected region. International aid organizations are mobilizing support."
 
 ⚠️ CRITICAL RULES - ZERO TOLERANCE:
 
-TIMING: EXACTLY 16 seconds speaking time (65-70 words)
-COUNT: Manually verify word count before responding  
-DATA: ONLY provided database information - NO additions
-FOCUS: Stick to requested topic "${query}" exclusively
-SPEED: 4.3 words per second maximum speaking rate
-STRUCTURE: Hook + Core + CTA - NO deviations
-FORBIDDEN: Speculation, assumptions, external knowledge
-NO EMOJIS: Use only plain text - NO emojis anywhere
+TIMING: EXACTLY 16 seconds speaking time (60-65 words)
+FORMAT: News bulletin style - serious, professional, factual
+DATA: ONLY provided database information - NO speculation
+TONE: Neutral, authoritative, clear - like BBC, CNN, or Reuters
+FORBIDDEN: Questions to audience, emojis, social media language, CTAs
+TENSE: Past tense or present perfect for completed actions
+STRUCTURE: Lede + Details + Brief closing
 
-AUDIO WILL HAVE: 2-second silence START + 16-second speech + 2-second silence END = 20 seconds total
+AUDIO TIMING: 2-second silence START + 16-second speech + 2-second silence END = 20 seconds total
 
 QUERY: ${query}
 
 AVAILABLE NEWS DATA (USE THIS INFORMATION ONLY):
 ${contextoRAG.substring(0, 3000)}
 
-CRITICAL: Create a news script using ONLY the information provided above about "${query}". If the data doesn't contain relevant information about "${query}", say so clearly.
+CRITICAL: Create a professional news bulletin using ONLY the information provided above about "${query}". If the data doesn't contain relevant information about "${query}", say so clearly.
 
 RESPOND ONLY THE SCRIPT:`;
 
@@ -385,51 +389,69 @@ RESPOND ONLY THE SCRIPT:`;
           role: "user",
           content: `
 🎯 YOUR MISSION
-Turn verified news from the database only into a spoken script of EXACTLY 60 to 65 words for voiceover/Reels. If the database lacks info, use the fallback line. Never invent or assume details.
+You are a professional news anchor delivering a breaking news bulletin. Transform verified news from the database into a spoken script of EXACTLY 60 to 65 words. Maintain journalistic standards: accuracy, neutrality, and clarity.
 
-🎙 TONE & STYLE
-- Breaking urgency, social-first cadence, short sentences, present tense
-- Clear, responsible wording; no speculation or clickbait claims
+📺 TONE & STYLE
+- Professional broadcast journalism tone
+- Clear, authoritative delivery
+- Factual reporting without sensationalism
+- Present perfect or past tense for events
+- Third-person perspective
 
 📋 REQUIRED STRUCTURE (60–65 words total)
-1) HOOK (0–3s / 15–18 words)
-   - High-impact openers: "BREAKING!", "DEVELOPING!", "MAJOR UPDATE!"
-   - Name the main event/person/place; why it matters now
-   - Build curiosity (e.g., "What we know—fast.")
 
-2) CORE (3–17s / 30–40 words)
-   - ONLY details in the database:
-     - Who/what/where/when/how; figures, locations, dates, officials, quotes
-     - Immediate impact or relevance (markets, safety, travel, policy) if present
-   - Professional, chronological, concise
-   - No time claims ("minutes ago") unless explicitly in database
+1) LEDE (0–4s / 15–20 words)
+   - Lead with the most newsworthy element
+   - Answer: Who? What? When? Where?
+   - Use strong, active verbs
+   - Examples:
+     * "Israeli forces have launched strikes in northern Gaza..."
+     * "The Federal Reserve has raised interest rates..."
+     * "Scientists at MIT have announced a breakthrough..."
 
-3) CTA (16–18s / 5 words)
-   - Must be a question or invite to comment (engagement-focused), e.g.:
-     - "Your take? Comment below now."
-     - "What happened? Join comments below."
-     - "Should leaders act now? Discuss."
+2) DETAILS (4–14s / 35–40 words)
+   - ONLY facts from the database:
+     * Official statements or quotes
+     * Specific numbers, casualties, figures
+     * Names of key officials or organizations
+     * Timeline of events
+     * Immediate impact or consequences
+   - Maintain logical flow
+   - No speculation or analysis
 
-📛 DO NOT
-- Invent data, context, or timelines
-- Infer beyond database facts
-- Reuse past stories not in the database
+3) CLOSING (14–16s / 5–10 words)
+   - Brief status update or what's next
+   - Examples:
+     * "The situation continues to develop."
+     * "Officials are monitoring the situation closely."
+     * "More information is expected within hours."
+     * "International observers are on site."
+   - NO audience questions or engagement requests
+
+🚫 DO NOT
+- Add opinion, analysis, or commentary
+- Use social media language (BREAKING!, emoji, etc.)
+- Ask questions to the audience
+- Include calls to action
+- Speculate beyond provided facts
+- Use sensational language
 
 ✅ IF NEWS EXISTS
-Produce the script exactly as Hook + Core + CTA (one of each, no repeats).
+Produce the script as: Lede + Details + Closing (professional broadcast style)
 
 🚫 IF NO DATABASE INFO
 Respond exactly:
-"Sorry, we don’t have news on [topic] at the moment. Stay tuned."
+"We currently have no confirmed reports on [topic]. We'll bring you updates as information becomes available."
 
 📌 CRITICAL RULES
 - WORD COUNT: 60–65 words exactly
-- DURATION: Under 20 seconds
+- DURATION: 16 seconds of speech maximum
+- STYLE: Broadcast journalism (BBC/CNN/Reuters standard)
 - PRECISION: Database facts only
-- FORMAT: Single Hook + Core + CTA
+- FORMAT: Lede + Details + Closing
 
 OUTPUT
-Only the final narrated script text; no headings or explanations.
+Only the final news script text; no labels, headings, or explanations.
 
 TOPIC: ${query}
 

@@ -125,11 +125,16 @@ HARD CONSTRAINTS:
 - Photorealistic, cinematic look, warm natural colors, gentle bokeh newsroom OR cozy studio background (brand-neutral).
 
 WARDROBE VARIATION (pick ONE unisex outfit at random per generation; change ONLY clothing/accessories, never identity):
-A) Crisp open-collar shirt (white/light blue) + textured blazer (grey) + minimal lapel pin.
-B) Minimalist top (cream/ivory) + soft-shoulder blazer (camel) + simple watch.
-C) Monochrome suit (mid-grey) + crew-neck knit (black) + discreet lapel mic.
-D) Powder-blue shirt + V-neck sweater (navy) + midnight blazer; no patterns.
-E) Black satin-lapel blazer + silk/satin top (ivory) + delicate chain or no jewelry.
+A) Structured blazer (charcoal) + fine-knit mock-neck (dark grey) + subtle pocket square (neutral).
+B) Soft tailored jacket (navy) + lightweight turtleneck (stone/beige) + minimal clasp necklace or no accessories.
+C) Button-up shirt (pale grey) + single-breasted blazer (light charcoal) + thin belt (black).
+D) Clean crew-neck sweater (off-white) layered under blazer (forest green) + discrete clip-on mic.
+E) Slate-blue shirt + tailored jacket (graphite) + no patterns + minimal wrist accessory.
+F) Double-layer look: thin knit base (black) + open blazer (midnight blue) + subtle collar pin.
+G) Soft-texture overshirt (sand) + tailored blazer (taupe) + simple metal watch.
+H) High-quality polo-style knit (charcoal) + dark blazer (black or midnight) + no jewelry.
+I) Crisp shirt (light lavender/ice grey) + blazer (deep navy) + smooth matte belt.
+J) Minimal monochrome look: dark shirt + matching dark blazer + small, neutral lapel mic.
 
 STYLING RULES:
 - Unisex, timeless elegance; no bold patterns, no logos, no hats/caps.

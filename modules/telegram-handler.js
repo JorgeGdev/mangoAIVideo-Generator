@@ -47,7 +47,7 @@ async function enviarMensaje(chatId, texto, reintentos = 3) {
     } catch (error) {
       console.error(`❌ Error sending message (intento ${i + 1}/${reintentos}):`, error.message);
       if (i === reintentos - 1) {
-        console.error('💥 Max reintentos alcanzados - mensaje no enviado');
+        console.error('Max retries reached - message not sent');
         return false;
       }
       // Wait before retry
@@ -61,7 +61,7 @@ function validarMensaje(texto) {
   if (!texto || !texto.includes('@')) {
     return {
       valido: false,
-      error: `❌ Formato: image@query\n📸 Imágenes: ${IMAGENES_DISPONIBLES.join(', ')}\n💡 Ejemplo: sofia3@dame las noticias del día`
+      error: `Formato: image@query\n📸 Imágenes: ${IMAGENES_DISPONIBLES.join(', ')}\n💡 Ejemplo:`
     };
   }
 

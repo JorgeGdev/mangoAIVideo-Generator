@@ -255,7 +255,7 @@ async function descargarVideo(videoUrl, sessionId) {
         await logAndNotify(sessionId, "Auto-download will be triggered after completion");
       }
 
-      // 🎵 NUEVO: Generar automáticamente subtítulos (REMOVIDO - se hace en el servidor)
+    
       // Los subtítulos se procesan en el servidor para mejor control de eventos
 
       return {

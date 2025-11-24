@@ -37,6 +37,10 @@ tmp_subtitles/*.ass
 !uploads/.gitkeep
 !tmp_subtitles/.gitkeep
 
+# Exception: Keep demo videos for Railway deployment
+!final_videos/demo1.mp4
+!final_videos/demo11.mp4
+
 # OS
 .DS_Store
 Thumbs.db

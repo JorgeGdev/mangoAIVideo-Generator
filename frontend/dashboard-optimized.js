@@ -731,13 +731,12 @@ async function loadShowcaseVideos() {
     const result = await response.json();
     
     if (result.success && result.videos && result.videos.length > 0) {
-      // Shuffle and select 4 random videos
-      const shuffled = result.videos.sort(() => 0.5 - Math.random());
-      const randomVideos = shuffled.slice(0, 4);
+      // Show up to 6 videos
+      const videosToShow = result.videos.slice(0, 6);
       
-      displayShowcaseVideos(randomVideos);
+      displayShowcaseVideos(videosToShow);
       
-      console.log(`✅ [Showcase] Loaded ${randomVideos.length} videos to display (${result.total || result.videos.length} total)`);
+      console.log(`✅ [Showcase] Loaded ${videosToShow.length} videos to display (${result.total || result.videos.length} total)`);
     } else {
       
       showShowcasePlaceholder();

@@ -1418,37 +1418,59 @@ app.get("/api/videos/showcase", (req, res) => {
   try {
     const videosDir = path.join(__dirname, "final_videos");
 
-    if (!fs.existsSync(videosDir)) {
-      return res.json({
-        success: false,
-        message: "Videos directory not found",
-        videos: [],
+    // Demo videos that always exist (fallback for Railway)
+    const demoVideos = [
+      "demo1.mp4",
+      "demo11.mp4"
+    ];
+
+    let allVideos = [];
+
+    if (fs.existsSync(videosDir)) {
+      // Get all MP4 files from final_videos directory
+      allVideos = fs
+        .readdirSync(videosDir)
+        .filter((file) => file.toLowerCase().endsWith(".mp4"))
+        .map((file) => {
+          const filePath = path.join(videosDir, file);
+          const stats = fs.statSync(filePath);
+          return {
+            filename: file,
+            path: `/final_videos/${file}`,
+            size: Math.round(stats.size / (1024 * 1024)), // Size in MB
+            date: stats.mtime.toISOString(),
+            title: file
+              .replace(".mp4", "")
+              .replace(/video_(\d{8})_(\d{6})/, "Video $1 $2"),
+          };
+        });
+    }
+
+    // If no videos found or less than 4, add demo videos as fallback
+    if (allVideos.length < 4) {
+      console.log(`📹 [Showcase] Found only ${allVideos.length} videos, adding demos as fallback`);
+      
+      demoVideos.forEach(demoFile => {
+        const demoPath = path.join(videosDir, demoFile);
+        // Only add if file exists and not already in list
+        if (fs.existsSync(demoPath) && !allVideos.find(v => v.filename === demoFile)) {
+          const stats = fs.statSync(demoPath);
+          allVideos.push({
+            filename: demoFile,
+            path: `/final_videos/${demoFile}`,
+            size: Math.round(stats.size / (1024 * 1024)),
+            date: stats.mtime.toISOString(),
+            title: "Demo Video",
+          });
+        }
       });
     }
 
-    // Get all MP4 files
-    const allVideos = fs
-      .readdirSync(videosDir)
-      .filter((file) => file.toLowerCase().endsWith(".mp4"))
-      .map((file) => {
-        const filePath = path.join(videosDir, file);
-        const stats = fs.statSync(filePath);
-        return {
-          filename: file,
-          path: `/final_videos/${file}`,
-          size: Math.round(stats.size / (1024 * 1024)), // Size in MB
-          date: stats.mtime.toISOString(),
-          title: file
-            .replace(".mp4", "")
-            .replace(/video_(\d{8})_(\d{6})/, "Video $1 $2"),
-        };
-      });
-
-    // Shuffle and select 4 random videos
+    // Shuffle and select up to 6 random videos (or all if less)
     const shuffled = allVideos.sort(() => 0.5 - Math.random());
-    const randomVideos = shuffled.slice(0, 4);
+    const randomVideos = shuffled.slice(0, Math.min(6, allVideos.length));
 
-    console.log(`📹 [Showcase] Returning ${randomVideos.length} random videos`);
+    console.log(`📹 [Showcase] Returning ${randomVideos.length} videos (${allVideos.length} total available)`);
 
     res.json({
       success: true,
@@ -1457,10 +1479,14 @@ app.get("/api/videos/showcase", (req, res) => {
     });
   } catch (error) {
     console.error("[Videos API] Error:", error);
+    // Even on error, try to return demo videos
     res.json({
-      success: false,
-      message: "Error loading videos",
-      videos: [],
+      success: true,
+      videos: [
+        { filename: "demo1.mp4", path: "/final_videos/demo1.mp4", title: "Demo Video 1" },
+        { filename: "demo11.mp4", path: "/final_videos/demo11.mp4", title: "Demo Video 2" }
+      ],
+      total: 2,
     });
   }
 });

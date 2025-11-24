@@ -1421,7 +1421,11 @@ app.get("/api/videos/showcase", (req, res) => {
     // Demo videos that always exist (fallback for Railway)
     const demoVideos = [
       "demo1.mp4",
-      "demo11.mp4"
+      "demo11.mp4",
+      "demo2.mp4",
+      "demo3.mp4",
+      "demo4.mp4",
+      "demo5.mp4"
     ];
 
     let allVideos = [];
@@ -1484,9 +1488,13 @@ app.get("/api/videos/showcase", (req, res) => {
       success: true,
       videos: [
         { filename: "demo1.mp4", path: "/final_videos/demo1.mp4", title: "Demo Video 1" },
-        { filename: "demo11.mp4", path: "/final_videos/demo11.mp4", title: "Demo Video 2" }
+        { filename: "demo11.mp4", path: "/final_videos/demo11.mp4", title: "Demo Video 2" },
+        { filename: "demo2.mp4", path: "/final_videos/demo2.mp4", title: "Demo Video 3" },
+        { filename: "demo3.mp4", path: "/final_videos/demo3.mp4", title: "Demo Video 4" },
+        { filename: "demo4.mp4", path: "/final_videos/demo4.mp4", title: "Demo Video 5" },
+        { filename: "demo5.mp4", path: "/final_videos/demo5.mp4", title: "Demo Video 6" }
       ],
-      total: 2,
+      total: 6,
     });
   }
 });

@@ -40,6 +40,10 @@ tmp_subtitles/*.ass
 # Exception: Keep demo videos for Railway deployment
 !final_videos/demo1.mp4
 !final_videos/demo11.mp4
+!final_videos/demo2.mp4
+!final_videos/demo3.mp4
+!final_videos/demo4.mp4
+!final_videos/demo5.mp4
 
 # OS
 .DS_Store
